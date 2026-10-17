@@ -137,7 +137,21 @@ nav.desk a:hover::after{width:100%}
 #ov .fact{background:var(--cream);color:var(--ink);border-radius:10px;padding:8px 14px;font-size:13.5px}
 #ov .note{color:var(--muted);font-size:13px;margin:0}
 .gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;padding:0 24px 24px}
-.gal img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:12px}
+.gal img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:12px;cursor:zoom-in;transition:transform .2s,box-shadow .2s}
+.gal img:hover{box-shadow:0 8px 22px rgba(0,0,0,.25)}
+#lb{position:fixed;inset:0;z-index:200;background:rgba(10,12,24,.96)}
+#lb[hidden]{display:none}
+.lbstage{position:absolute;inset:0;overflow:auto;padding:56px 16px 56px}
+#lbI{display:block;max-width:100%;max-height:calc(100vh - 112px);margin:0 auto;object-fit:contain;cursor:zoom-in;border-radius:6px;user-select:none}
+#lbI.z{max-width:none;max-height:none;width:auto;height:auto;width:180%;cursor:zoom-out}
+.lbbtn{position:absolute;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:999px;cursor:pointer;font-family:var(--body);z-index:3}
+.lbbtn:hover{background:rgba(255,255,255,.22)}
+.lbx{top:12px;right:12px;width:44px;height:44px;font-size:28px;line-height:1}
+.lbp,.lbn{top:50%;transform:translateY(-50%);width:48px;height:48px;font-size:34px;line-height:1}
+.lbp{left:12px}
+.lbn{right:12px}
+.lbcount{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);color:#fff;font-size:14px;background:rgba(0,0,0,.35);padding:6px 14px;border-radius:999px;z-index:3}
+@media (max-width:640px){.lbp,.lbn{top:auto;bottom:10px;transform:none;width:44px;height:44px}.lbp{left:12px}.lbn{right:12px}.lbcount{bottom:20px}}
 .gal .lead{grid-column:1/-1}
 .gal .lead img{aspect-ratio:16/9}
 
@@ -337,6 +351,16 @@ footer img{height:34px;width:auto}
   </div></div>
 </div>
 
+<div id="lb" hidden role="dialog" aria-modal="true" aria-label="Foto ampliada">
+  <div class="lbstage" id="lbStage">
+    <img id="lbI" alt="" title="Clique para ampliar ou reduzir">
+  </div>
+  <button class="lbbtn lbx" id="lbX" aria-label="Fechar foto">&times;</button>
+  <button class="lbbtn lbp" id="lbP" aria-label="Foto anterior">&#8249;</button>
+  <button class="lbbtn lbn" id="lbN" aria-label="Próxima foto">&#8250;</button>
+  <div class="lbcount" id="lbC"></div>
+</div>
+
 <script>
 const WA = "5582994010202";
 const IMOVEIS = [
@@ -441,15 +465,50 @@ function openCard(i){
     im.loading="lazy"; im.alt=i.n+" — foto "+k;
     im.src="assets/fotos/"+i.s+"/"+String(k).padStart(2,"0")+".jpg";
     im.addEventListener("error",()=>d.remove());
+    im.addEventListener("click",()=>openLb(im));
     d.appendChild(im); g.appendChild(d);
   }
   ov.hidden=false; ov.scrollTop=0;
   document.documentElement.style.overflow="hidden";
 }
-function closeCard(){ ov.hidden=true; document.documentElement.style.overflow=""; }
+function closeCard(){ closeLb(); ov.hidden=true; document.documentElement.style.overflow=""; }
 document.getElementById("ovX").addEventListener("click",closeCard);
 ov.addEventListener("click",e=>{ if(e.target===ov) closeCard(); });
-document.addEventListener("keydown",e=>{ if(e.key==="Escape" && !ov.hidden) closeCard(); });
+
+/* Visualizador de foto ampliada (zoom e navegação entre as fotos do empreendimento) */
+const lb=document.getElementById("lb"), lbI=document.getElementById("lbI"), lbC=document.getElementById("lbC"), lbStage=document.getElementById("lbStage");
+let lbList=[], lbIdx=0;
+function lbShow(){
+  lbI.classList.remove("z");
+  lbI.src=lbList[lbIdx];
+  lbI.alt="Foto "+(lbIdx+1)+" de "+lbList.length;
+  lbC.textContent=(lbIdx+1)+" / "+lbList.length+" · toque na foto para ampliar";
+  lbStage.scrollTop=0; lbStage.scrollLeft=0;
+}
+function openLb(img){
+  lbList=[...document.querySelectorAll("#ovG img")].map(x=>x.src);
+  lbIdx=Math.max(0,lbList.indexOf(img.src));
+  lb.hidden=false; lbShow();
+}
+function closeLb(){ if(lb) lb.hidden=true; }
+function lbStep(d){ lbIdx=(lbIdx+d+lbList.length)%lbList.length; lbShow(); }
+lbI.addEventListener("click",()=>{
+  lbI.classList.toggle("z");
+  if(lbI.classList.contains("z")){ lbStage.scrollLeft=(lbStage.scrollWidth-lbStage.clientWidth)/2; lbStage.scrollTop=(lbStage.scrollHeight-lbStage.clientHeight)/2; }
+});
+document.getElementById("lbX").addEventListener("click",closeLb);
+document.getElementById("lbP").addEventListener("click",e=>{ e.stopPropagation(); lbStep(-1); });
+document.getElementById("lbN").addEventListener("click",e=>{ e.stopPropagation(); lbStep(1); });
+lb.addEventListener("click",e=>{ if(e.target===lb || e.target===lbStage) closeLb(); });
+document.addEventListener("keydown",e=>{
+  if(!lb.hidden){
+    if(e.key==="Escape") closeLb();
+    else if(e.key==="ArrowLeft") lbStep(-1);
+    else if(e.key==="ArrowRight") lbStep(1);
+    return;
+  }
+  if(e.key==="Escape" && !ov.hidden) closeCard();
+});
 
 document.getElementById("goSearch").addEventListener("click",()=>{
   bairroSel=selB.value; faixaSel=document.getElementById("fFaixa").value;
@@ -482,7 +541,7 @@ const EQUIPE = [
  {n:"Matheus Esdras", role:"Corretor e Sócio Administrador", ig:"matheus.esdras", f:"matheus.jpg"},
  {n:"Kelljon Barbosa", role:"Corretor e Sócio Executivo", ig:"kelljonbarbosa", f:"kelljon.jpg"},
  {n:"Bruno Montenegro", role:"Corretor", ig:"brunomontenegro.imoveis", f:"bruno.jpg"},
- {n:"Leonardo Santos", role:"Corretor", ig:"_leosantoss", f:"leonardo.jpg"}
+ {n:"Leonardo Santos", role:"Corretor", ig:"_.leosantoss", f:"leonardo.jpg"}
 ];
 const teamGrid = document.getElementById("teamGrid");
 if(teamGrid){

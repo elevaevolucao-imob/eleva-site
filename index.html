@@ -1,0 +1,500 @@
+<title>Eleva Evolução Imobiliária</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<style>
+/* Layout: faixa navy fixa no topo, hero com foto de Maceió, grade de empreendimentos filtrável por bairro, galeria em sobreposição. */
+:root{
+  --navy:#2B3578;
+  --navy-deep:#20275a;
+  --gold:#C4A07A;
+  --cream:#F5EDDA;
+  --bg:#ffffff;
+  --surface:#ffffff;
+  --ink:#1d2033;
+  --muted:#6b6f85;
+  --line:#e6e4ea;
+  --shadow:0 18px 40px rgba(29,32,51,.10);
+  --display:'Outfit',"Segoe UI",system-ui,sans-serif;
+  --body:'DM Sans',"Segoe UI",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --navy:#2B3578; --navy-deep:#161b3f; --gold:#D4B48E; --cream:#1d2140;
+    --bg:#111426; --surface:#191d33; --ink:#eceaf4; --muted:#a3a7bd; --line:#2b3050;
+    --shadow:0 18px 40px rgba(0,0,0,.45); color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --navy:#2B3578; --navy-deep:#161b3f; --gold:#D4B48E; --cream:#1d2140;
+  --bg:#111426; --surface:#191d33; --ink:#eceaf4; --muted:#a3a7bd; --line:#2b3050;
+  --shadow:0 18px 40px rgba(0,0,0,.45); color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.6}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:60;background:var(--navy)}
+img{max-width:100%;display:block}
+h1,h2,h3,h4{font-family:var(--display);letter-spacing:-.01em;text-wrap:balance;margin:0}
+a{color:inherit}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.band{padding-block:72px}
+:focus-visible{outline:3px solid var(--gold);outline-offset:3px;border-radius:6px}
+
+/* Header */
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:50;background:var(--navy)}
+.hd{display:flex;align-items:center;justify-content:space-between;gap:16px;height:68px}
+.hd img{height:38px;width:auto;object-fit:contain}
+nav.desk{display:none;gap:26px}
+nav.desk a{color:#fff;text-decoration:none;font-size:14px;font-weight:500;position:relative;padding-block:4px}
+nav.desk a::after{content:"";position:absolute;left:0;bottom:0;height:2px;width:0;background:var(--gold);transition:width .25s}
+nav.desk a:hover::after{width:100%}
+.btn{display:inline-flex;align-items:center;gap:9px;border-radius:999px;font-weight:700;font-size:14px;padding:11px 22px;text-decoration:none;border:2px solid transparent;cursor:pointer;font-family:var(--body)}
+.btn-gold{background:var(--gold);color:#1d2033}
+.btn-gold:hover{background:#b5935f}
+.btn-ghost{border-color:var(--gold);color:#fff}
+.btn-ghost:hover{background:var(--gold);color:#1d2033}
+#burger{display:inline-flex;background:none;border:0;color:#fff;font-size:26px;line-height:1;cursor:pointer;padding:4px}
+#mobnav{display:none;background:var(--navy);border-top:1px solid rgba(255,255,255,.14)}
+#mobnav[data-open="1"]{display:block}
+#mobnav .wrap{display:flex;flex-direction:column;gap:14px;padding-block:18px}
+#mobnav a{color:#fff;text-decoration:none;font-weight:500;font-size:15px}
+@media(min-width:900px){ nav.desk{display:flex} #burger{display:none} .hd{height:80px} .hd img{height:46px} }
+
+/* Hero */
+.hero{position:relative;overflow:hidden;background:linear-gradient(rgba(43,53,120,.84),rgba(43,53,120,.88)),url('assets/mcz.jpg') center/cover;color:#fff;padding-block:84px 76px}
+.hero .mark{position:absolute;right:-5%;bottom:-16%;width:460px;max-width:60vw;opacity:.07;pointer-events:none}
+.hero .inner{position:relative;z-index:2;max-width:760px;margin:0 auto;text-align:center;display:flex;flex-direction:column;align-items:center;gap:18px}
+.badge{display:inline-block;border:1.5px solid var(--gold);color:var(--gold);font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:6px 18px;border-radius:999px}
+.hero h1{font-size:clamp(2.1rem,6vw,3.9rem);font-weight:700;line-height:1.08}
+.hero h1 span{color:var(--gold)}
+.rule{width:48px;height:2px;background:var(--gold)}
+.hero p{color:rgba(255,255,255,.85);font-size:clamp(1rem,2.3vw,1.15rem);max-width:56ch;margin:0}
+.hero .trust{display:inline-flex;align-items:center;gap:8px;color:rgba(255,255,255,.75);font-size:14px}
+.hero .dot{width:7px;height:7px;border-radius:50%;background:var(--gold);flex:none}
+
+/* Busca */
+.search{width:100%;max-width:720px;display:flex;flex-wrap:wrap;gap:8px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);border-radius:18px;padding:10px}
+.search select{flex:1 1 180px;min-width:0;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);color:#fff;border-radius:12px;padding:12px 14px;font-family:var(--body);font-size:14px;cursor:pointer}
+.search select option{color:#1d2033;background:#fff}
+.search button{flex:1 1 150px}
+
+/* Diferenciais */
+.cream{background:var(--cream)}
+.sechead{text-align:center;max-width:62ch;margin:0 auto 40px;display:flex;flex-direction:column;gap:12px;align-items:center}
+.sechead h2{font-size:clamp(1.7rem,4vw,2.6rem);color:var(--navy);font-weight:700}
+:root[data-theme="dark"] .sechead h2,
+.cream .sechead h2{color:var(--navy)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .sechead h2{color:var(--gold)}}
+:root[data-theme="dark"] .sechead h2{color:var(--gold)}
+.sechead p{color:var(--muted);margin:0}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:22px}
+.dif{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:28px;display:flex;flex-direction:column;gap:12px}
+.dif .ico{width:50px;height:50px;border-radius:50%;background:rgba(196,160,122,.16);color:var(--gold);display:grid;place-items:center;font-size:21px}
+.dif h3{font-size:1.12rem;color:var(--ink)}
+.dif p{color:var(--muted);font-size:14.5px;margin:0}
+
+/* Imóveis */
+.chips{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin-bottom:32px}
+.chip{border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:999px;padding:9px 18px;font-size:14px;font-family:var(--body);cursor:pointer;font-weight:500}
+.chip[aria-pressed="true"]{background:var(--navy);border-color:var(--navy);color:#fff}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(288px,1fr));gap:24px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;overflow:hidden;display:flex;flex-direction:column;text-align:left;padding:0;cursor:pointer;font-family:var(--body);color:inherit;transition:transform .25s,box-shadow .25s}
+.card:hover{transform:translateY(-4px);box-shadow:var(--shadow)}
+.card .ph{position:relative;aspect-ratio:16/9;background:var(--cream)}
+.card .ph img{width:100%;height:100%;object-fit:cover}
+.card .tag{position:absolute;top:12px;left:12px;background:var(--gold);color:#1d2033;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:5px 11px;border-radius:999px}
+.card .bd{padding:20px;display:flex;flex-direction:column;gap:9px;flex:1}
+.card .loc{color:var(--gold);font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.card h3{font-size:1.22rem;color:var(--ink)}
+.card p{color:var(--muted);font-size:14px;margin:0;flex:1}
+.team{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:22px}
+.tm{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:22px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px}
+.tm img{width:108px;height:108px;border-radius:50%;object-fit:cover;border:3px solid var(--gold);margin-bottom:8px}
+.tm h3{font-size:1.05rem;color:var(--ink);margin:0}
+.tm .role{color:var(--gold);font-size:12.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.tm a.ig{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:13px;text-decoration:none;margin-top:4px}
+.tm a.ig:hover{color:var(--gold)}
+.tm a.ig .ic{width:16px;height:16px}
+.price{border-top:1px solid var(--line);padding-top:12px;margin-top:4px}
+.price .lbl{display:block;color:var(--muted);font-size:12px}
+.price .val{font-family:var(--display);font-weight:700;font-size:1.3rem;color:var(--navy);font-variant-numeric:tabular-nums}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .price .val{color:var(--gold)}}
+:root[data-theme="dark"] .price .val{color:var(--gold)}
+.price .sob{font-family:var(--display);font-weight:600;font-size:1.05rem;color:var(--muted)}
+.empty{text-align:center;color:var(--muted);padding:40px 0}
+
+/* Galeria sobreposta */
+#ov{position:fixed;inset:0;z-index:100;background:rgba(17,20,38,.93);overflow-y:auto;padding:0 0 48px}
+#ov .top{position:sticky;top:0;background:var(--navy);z-index:2}
+#ov .topin{display:flex;align-items:center;justify-content:space-between;gap:14px;height:64px}
+#ov .topin h2{color:#fff;font-size:1.15rem;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#ov .close{background:none;border:0;color:#fff;font-size:28px;cursor:pointer;line-height:1;padding:4px 8px}
+#ov .sheet{max-width:1000px;margin:26px auto 0;background:var(--surface);border-radius:18px;overflow:hidden}
+#ov .meta{padding:24px;display:flex;flex-direction:column;gap:14px}
+#ov .meta .loc{color:var(--gold);font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+#ov .facts{display:flex;flex-wrap:wrap;gap:10px}
+#ov .fact{background:var(--cream);color:var(--ink);border-radius:10px;padding:8px 14px;font-size:13.5px}
+#ov .note{color:var(--muted);font-size:13px;margin:0}
+.gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;padding:0 24px 24px}
+.gal img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:12px}
+.gal .lead{grid-column:1/-1}
+.gal .lead img{aspect-ratio:16/9}
+
+/* Sobre + contato */
+.two{display:grid;grid-template-columns:1fr;gap:34px;align-items:center}
+@media(min-width:880px){.two{grid-template-columns:1.05fr .95fr;gap:56px}}
+.two h2{font-size:clamp(1.7rem,4vw,2.4rem);color:var(--navy)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .two h2{color:var(--gold)}}
+:root[data-theme="dark"] .two h2{color:var(--gold)}
+.two p{color:var(--muted)}
+.two img{border-radius:18px;width:100%;aspect-ratio:4/3;object-fit:cover}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:18px;margin-top:22px}
+.stat b{display:block;font-family:var(--display);font-size:1.9rem;color:var(--gold);line-height:1.1}
+.stat span{color:var(--muted);font-size:13.5px}
+.contato{background:var(--navy);color:#fff}
+.contato .sechead h2{color:#fff}
+.contato .sechead p{color:rgba(255,255,255,.75)}
+.cbox{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px}
+.cc{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:10px}
+.cc .ico{color:var(--gold);font-size:22px}
+.cc h3{font-size:1.05rem;color:#fff}
+.cc .v{font-size:15px;color:#fff;word-break:break-word;user-select:all}
+.cc small{color:rgba(255,255,255,.65);font-size:12.5px}
+.cpy{align-self:flex-start;background:none;border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:999px;padding:7px 15px;font-size:12.5px;cursor:pointer;font-family:var(--body)}
+footer{background:var(--navy-deep);color:rgba(255,255,255,.72);padding-block:36px;font-size:13.5px}
+footer .fin{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between}
+footer img{height:34px;width:auto}
+.float{position:fixed;right:max(18px,env(safe-area-inset-right,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:55;width:56px;height:56px;border-radius:50%;background:#25D366;color:#fff;display:grid;place-items:center;font-size:27px;text-decoration:none;box-shadow:0 10px 26px rgba(0,0,0,.28)}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+.ic{width:1.15em;height:1.15em;flex:none;display:inline-block;vertical-align:-.18em}
+.dif .ico .ic,#ov .ico .ic,.cc .ico .ic{width:1em;height:1em}
+#burger .ic{width:26px;height:26px}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+<g id="i-chat" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.6a8.4 8.4 0 0 1-12.3 7.5L3.5 20.5l1.4-5.1A8.4 8.4 0 1 1 21 11.6Z"/><path d="M8.6 9.1c0 3.1 2.7 5.8 5.8 5.8l1.3-1.6-2-1.1-1 .9a5 5 0 0 1-2.2-2.2l.9-1-1.1-2-1.6 1.2Z"/></g>
+<g id="i-insta" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none"/></g>
+<g id="i-search" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="11" cy="11" r="6.3"/><path d="m15.8 15.8 4 4"/></g>
+<g id="i-menu" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></g>
+<g id="i-house" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.8 12 4l8 6.8V20H4Z"/><circle cx="12" cy="12.6" r="1.9"/><path d="M8.8 18.4a3.6 3.6 0 0 1 6.4 0"/></g>
+<g id="i-shield" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.4 19 6v6c0 4-3 7-7 8.6C8 19 5 16 5 12V6Z"/><path d="m9 12 2.2 2.2L15.4 10"/></g>
+<g id="i-pin" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s6.5-6 6.5-10.5a6.5 6.5 0 0 0-13 0C5.5 15 12 21 12 21Z"/><circle cx="12" cy="10.4" r="2.5"/></g>
+<g id="i-hands" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m3.5 12 3.8-3.8 3 1.6 3.4-1.6 3 1.6 3.8 2.2-3.4 4.2-2.6-2"/><path d="m8.6 14.4 2.6 2.4 2.4-1.8 2.2 2"/></g>
+<g id="i-key" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.2" cy="8.4" r="4.1"/><path d="m11.2 11.4 8 8M16.4 16.6l1.8-1.8M14 14.2l1.8-1.8"/></g>
+<g id="i-build" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20.5V5.2L13 3v17.5M13 9.4h6v11.1M5 20.5h16"/><path d="M8.2 8h1.8M8.2 11.4h1.8M8.2 14.8h1.8M15.6 13h1.4M15.6 16.4h1.4"/></g>
+<g id="i-mail" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.2" y="5.4" width="17.6" height="13.2" rx="2.2"/><path d="m3.8 7 8.2 6 8.2-6"/></g>
+</defs></svg>
+<header>
+  <div class="wrap hd">
+    <a href="#inicio" aria-label="Eleva Evolução Imobiliária"><img src="assets/logo.png" alt="Eleva Evolução Imobiliária"></a>
+    <nav class="desk">
+      <a href="#inicio">Início</a>
+      <a href="#imoveis">Imóveis</a>
+      <a href="#diferenciais">Diferenciais</a>
+      <a href="#sobre">Sobre</a>
+      <a href="#equipe">Equipe</a>
+      <a href="#contato">Contato</a>
+    </nav>
+    <a class="btn btn-gold" id="waTop" href="#contato"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-chat"></use></svg> Fale conosco</a>
+    <button id="burger" aria-label="Abrir menu" aria-expanded="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-menu"></use></svg></button>
+  </div>
+  <div id="mobnav">
+    <div class="wrap">
+      <a href="#inicio">Início</a>
+      <a href="#imoveis">Imóveis</a>
+      <a href="#diferenciais">Diferenciais</a>
+      <a href="#sobre">Sobre</a>
+      <a href="#equipe">Equipe</a>
+      <a href="#contato">Contato</a>
+    </div>
+  </div>
+</header>
+
+<section class="hero" id="inicio">
+  <img class="mark" src="assets/icone.png" alt="" aria-hidden="true">
+  <div class="wrap inner">
+    <span class="badge">Evolução Imobiliária · Maceió, AL</span>
+    <h1>Eleve sua vida.<br><span>Encontre seu imóvel.</span></h1>
+    <span class="rule"></span>
+    <p>Do primeiro imóvel ao alto padrão. A Eleva conecta você ao imóvel certo em Maceió, com acompanhamento do primeiro contato à escritura.</p>
+    <div class="search">
+      <select id="fBairro" aria-label="Bairro"><option value="">Todos os bairros</option></select>
+      <select id="fFaixa" aria-label="Faixa de preço">
+        <option value="">Qualquer valor</option>
+        <option value="0-400000">Até R$ 400 mil</option>
+        <option value="400000-600000">R$ 400 mil a R$ 600 mil</option>
+        <option value="600000-99999999">Acima de R$ 600 mil</option>
+      </select>
+      <button class="btn btn-gold" id="goSearch"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-search"></use></svg> Ver imóveis</button>
+    </div>
+    <span class="trust"><span class="dot"></span> CRECI 11517-J · Lançamentos e imóveis prontos em Maceió</span>
+  </div>
+</section>
+
+<section class="band" id="imoveis">
+  <div class="wrap">
+    <div class="sechead">
+      <h2>Imóveis em Maceió</h2>
+      <p>Empreendimentos que a Eleva representa hoje, por bairro. Toque em um para ver as fotos.</p>
+    </div>
+    <div class="chips" id="chips" role="group" aria-label="Filtrar por bairro"></div>
+    <div class="cards" id="cards"></div>
+    <p class="empty" id="empty" hidden>Nenhum imóvel com esse filtro. Fale com a gente que buscamos uma opção.</p>
+  </div>
+</section>
+
+<section class="band cream" id="diferenciais">
+  <div class="wrap">
+    <div class="sechead">
+      <h2>Por que escolher a Eleva?</h2>
+      <p>Expertise local em Maceió e um atendimento que acompanha cada etapa, do primeiro contato à entrega das chaves.</p>
+    </div>
+    <div class="grid3">
+      <div class="dif"><div class="ico"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-house"></use></svg></div><h3>Atendimento personalizado</h3><p>Cada cliente recebe um consultor dedicado do início ao fim do processo.</p></div>
+      <div class="dif"><div class="ico"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-shield"></use></svg></div><h3>Segurança jurídica</h3><p>Documentação verificada e negociação acompanhada por especialistas.</p></div>
+      <div class="dif"><div class="ico"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-pin"></use></svg></div><h3>Expertise local</h3><p>Conhecemos cada bairro e o movimento real de preço em Maceió.</p></div>
+      <div class="dif"><div class="ico"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-hands"></use></svg></div><h3>Negociação transparente</h3><p>Você acompanha cada etapa, com os valores e as condições na mesa.</p></div>
+      <div class="dif"><div class="ico"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-key"></use></svg></div><h3>Da entrada às chaves</h3><p>FGTS, subsídio e parcelamento com a construtora: a gente monta a conta com você.</p></div>
+      <div class="dif"><div class="ico"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-build"></use></svg></div><h3>Lançamentos e prontos</h3><p>Do Minha Casa Minha Vida ao alto padrão na orla, em um só lugar.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="sobre">
+  <div class="wrap two">
+    <div>
+      <h2>A Eleva, em Maceió</h2>
+      <p>A Eleva Evolução Imobiliária trabalha com compra, venda e lançamentos em Maceió, de apartamentos do Minha Casa Minha Vida a imóveis de alto padrão na orla. O trabalho começa antes do imóvel: entender a renda, o uso do FGTS, o subsídio e o prazo de quem está comprando.</p>
+      <p>A carteira reúne empreendimentos da Jatiúca, Pajuçara, Ponta Verde, Cruz das Almas, Jacarecica, Poço e Tabuleiro do Martins, com construtoras que atuam na cidade.</p>
+      <div class="stats">
+        <div class="stat"><b id="stN">15</b><span>empreendimentos nesta página</span></div>
+        <div class="stat"><b id="stB">8</b><span>bairros de Maceió</span></div>
+        <div class="stat"><b>CRECI</b><span>11517-J</span></div>
+      </div>
+    </div>
+    <img src="assets/mcz.jpg" alt="Orla de Maceió">
+  </div>
+</section>
+
+<section class="band cream" id="equipe">
+  <div class="wrap">
+    <span class="badge">Equipe</span>
+    <h2 style="margin-top:14px">Quem vai te atender</h2>
+    <p style="color:var(--muted);max-width:620px;margin-bottom:32px">Corretores da Eleva Evolução Imobiliária, prontos para te acompanhar do primeiro contato às chaves na mão.</p>
+    <div class="team" id="teamGrid"></div>
+  </div>
+</section>
+
+<section class="band contato" id="contato">
+  <div class="wrap">
+    <div class="sechead">
+      <h2>Fale com a Eleva</h2>
+      <p>Diga o bairro e o valor que cabe no seu mês. A gente volta com as opções e a simulação.</p>
+    </div>
+    <div class="cbox">
+      <div class="cc">
+        <span class="ico"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-chat"></use></svg></span>
+        <h3>WhatsApp</h3>
+        <span class="v" id="waNum">(82) 99999-9999</span>
+        <a class="btn btn-gold" id="waLink" href="#" target="_blank" rel="noopener"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-chat"></use></svg> Abrir conversa</a>
+      </div>
+      <div class="cc">
+        <span class="ico"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-mail"></use></svg></span>
+        <h3>E-mail</h3>
+        <span class="v" id="mailV">contato@elevaimoveis.com.br</span>
+        <button class="cpy" data-copy="mailV">Copiar e-mail</button>
+      </div>
+      <div class="cc">
+        <span class="ico"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-pin"></use></svg></span>
+        <h3>Atendimento</h3>
+        <span class="v">Maceió, Alagoas</span>
+        <small>Visitas aos empreendimentos agendadas com antecedência.</small>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap fin">
+    <img src="assets/logo.png" alt="Eleva Evolução Imobiliária">
+    <span>© <span id="yr">2026</span> Eleva Evolução Imobiliária · Maceió, AL · CRECI 11517-J</span>
+  </div>
+</footer>
+
+<a class="float" id="waFloat" href="#contato" aria-label="WhatsApp"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-chat"></use></svg></a>
+
+<div id="ov" hidden>
+  <div class="top"><div class="wrap topin"><h2 id="ovT">—</h2><button class="close" id="ovX" aria-label="Fechar">&times;</button></div></div>
+  <div class="wrap"><div class="sheet">
+    <div class="meta">
+      <span class="loc" id="ovL"></span>
+      <div class="facts" id="ovF"></div>
+      <p class="note" id="ovN"></p>
+      <a class="btn btn-gold" id="ovW" href="#" target="_blank" rel="noopener"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-chat"></use></svg> Quero saber mais</a>
+    </div>
+    <div class="gal" id="ovG"></div>
+  </div></div>
+</div>
+
+<script>
+const WA = "5582994010202";
+const IMOVEIS = [
+ {s:"sitges", n:"Sitges", b:"Jatiúca", c:"TelesilMais", p:390425.75, d:"Piscina, academia, coworking e área gourmet no miolo da Jatiúca."},
+ {s:"zyon", n:"Edifício Zyon", b:"Jatiúca", c:null, p:387023, tag:"Pré-lançamento", e:"Rua Dep. Luiz Gonzaga", d:"Pré-lançamento com plano direto com a construtora e lazer completo."},
+ {s:"stella-maris", n:"Stella Maris Residence", b:"Jatiúca", c:"Telesil", p:null, d:"Apartamentos com área de lazer equipada, perto do Corredor Vera Arruda."},
+ {s:"lume", n:"Lume", b:"Pajuçara", c:"TelesilMais", p:364990.36, d:"Fachada em brise, rooftop e lazer completo a passos da orla da Pajuçara."},
+ {s:"summit-praia", n:"Summit Praia", b:"Pajuçara", c:"R Pontes", p:645900.03, d:"Studios na quadra da praia, no bairro mais valorizado de Maceió."},
+ {s:"braganca", n:"Bragança Residence", b:"Pajuçara", c:null, p:451473.68, d:"Apartamentos de 1 a 3 quartos, com academia, coworking e espaço kids."},
+ {s:"altimus", n:"Altimus", b:"Cruz das Almas", c:null, p:599323.83, tag:"Pré-lançamento", d:"Vista mar, piscina com borda infinita e lazer de resort na orla."},
+ {s:"beach-class", n:"Beach Class Maceió", b:"Cruz das Almas", c:null, p:314159.68, d:"Frente mar, com piscina suspensa, spa e serviços de hotelaria."},
+ {s:"city-park", n:"City Park", b:"Cruz das Almas", c:null, p:397167.85, d:"Condomínio clube com quadra, academia, mercado e espaço pet."},
+ {s:"povoa", n:"Póvoa de Varzim Residence", b:"Jacarecica", c:null, p:401353.24, d:"Duas torres frente mar, de studios a 3 quartos, com lazer completo."},
+ {s:"mood", n:"Mood Jacarecica", b:"Jacarecica", c:"Moura Dubeux", p:null, d:"Piscina entre as torres, varandas amplas e 300 m da praia."},
+ {s:"ivan-timoteo", n:"Ivan Timóteo", b:"Ponta Verde", c:"TelesilMais", p:null, d:"Lazer no rooftop, coworking e mercado, no coração da Ponta Verde."},
+ {s:"five", n:"Five", b:"Ponta Verde", c:null, p:null, d:"Fachada em tijolo e madeira, hall assinado e bicicletário."},
+ {s:"splendido", n:"Splendido Maceió", b:"Poço", c:null, p:null, d:"Piscinas, quadra e espaço fitness a cinco minutos da praia."},
+ {s:"mata-oliveiras", n:"Mata das Oliveiras", b:"Tabuleiro do Martins", c:"MRV", p:null, tag:"Minha Casa Minha Vida", d:"Apartamentos de 2 quartos em condomínio fechado, com playground."},
+ {s:"pharos", n:"Pharos", b:"Farol", c:"Trez Incorporações", p:null, d:"Empreendimento residencial no Farol, com estrutura completa de lazer e acabamento de alto padrão."},
+ {s:"grand-via", n:"Grand Via", b:"Antares", c:"Telesil", p:null, d:"Empreendimento residencial em Antares, com plantas amplas e área de lazer completa."}
+];
+
+const brl = v => v.toLocaleString("pt-BR",{style:"currency",currency:"BRL",maximumFractionDigits:0});
+const waUrl = txt => "https://wa.me/"+WA+"?text="+encodeURIComponent(txt);
+let bairroSel = "", faixaSel = "";
+
+document.getElementById("yr").textContent = new Date().getFullYear();
+document.getElementById("waLink").href = waUrl("Olá! Vim pelo site da Eleva e gostaria de falar sobre imóveis em Maceió.");
+document.getElementById("waTop").href = waUrl("Olá! Vim pelo site da Eleva.");
+document.getElementById("waFloat").href = waUrl("Olá! Vim pelo site da Eleva.");
+document.getElementById("waNum").textContent = "(" + WA.slice(2,4) + ") " + WA.slice(4,9) + "-" + WA.slice(9);
+
+const bairros = [...new Set(IMOVEIS.map(i=>i.b))].sort((a,b)=>a.localeCompare(b,"pt-BR"));
+document.getElementById("stN").textContent = IMOVEIS.length;
+document.getElementById("stB").textContent = bairros.length;
+
+const selB = document.getElementById("fBairro");
+bairros.forEach(b=>{ const o=document.createElement("option"); o.value=b; o.textContent=b; selB.appendChild(o); });
+
+const chips = document.getElementById("chips");
+function mkChip(label, val){
+  const b=document.createElement("button");
+  b.className="chip"; b.textContent=label; b.type="button";
+  b.setAttribute("aria-pressed", String(bairroSel===val));
+  b.addEventListener("click",()=>{ bairroSel=val; render(); });
+  chips.appendChild(b);
+}
+function buildChips(){ chips.innerHTML=""; mkChip("Todos", ""); bairros.forEach(b=>mkChip(b,b)); }
+
+const cards = document.getElementById("cards");
+function render(){
+  buildChips();
+  const [lo,hi] = faixaSel ? faixaSel.split("-").map(Number) : [null,null];
+  const list = IMOVEIS.filter(i=>{
+    if(bairroSel && i.b!==bairroSel) return false;
+    if(lo!==null){ if(i.p===null) return false; if(i.p<lo||i.p>hi) return false; }
+    return true;
+  });
+  cards.innerHTML="";
+  list.forEach(i=>{
+    const el=document.createElement("button");
+    el.className="card"; el.type="button";
+    el.innerHTML =
+      '<div class="ph">'+(i.tag?'<span class="tag">'+i.tag+'</span>':'')+
+        '<img loading="lazy" alt="'+i.n+'" src="assets/fotos/'+i.s+'/capa.jpg">'+
+      '</div>'+
+      '<div class="bd">'+
+        '<span class="loc">'+i.b+(i.c?' · '+i.c:'')+'</span>'+
+        '<h3>'+i.n+'</h3>'+
+        '<p>'+i.d+'</p>'+
+        '<div class="price">'+(i.p
+          ? '<span class="lbl">A partir de</span><span class="val">'+brl(i.p)+'</span>'
+          : '<span class="lbl">Valores</span><span class="sob">Sob consulta</span>')+
+        '</div>'+
+      '</div>';
+    el.addEventListener("click",()=>openCard(i));
+    cards.appendChild(el);
+  });
+  document.getElementById("empty").hidden = list.length>0;
+}
+
+const ov=document.getElementById("ov");
+function openCard(i){
+  document.getElementById("ovT").textContent=i.n;
+  document.getElementById("ovL").textContent=i.b+(i.c?" · "+i.c:"");
+  const f=document.getElementById("ovF"); f.innerHTML="";
+  const facts=[];
+  if(i.p) facts.push("A partir de "+brl(i.p));
+  if(i.e) facts.push(i.e);
+  if(i.tag) facts.push(i.tag);
+  facts.push("Maceió, AL");
+  facts.forEach(t=>{ const s=document.createElement("span"); s.className="fact"; s.textContent=t; f.appendChild(s); });
+  document.getElementById("ovN").textContent = i.p
+    ? "O valor é o menor da tabela vigente e pode mudar conforme unidade, andar e data."
+    : "Tabela sob consulta. Fale com a Eleva para a condição da unidade que te interessa.";
+  document.getElementById("ovW").href = waUrl("Olá! Vi o "+i.n+" ("+i.b+") no site da Eleva e quero saber mais.");
+  const g=document.getElementById("ovG"); g.innerHTML="";
+  for(let k=1;k<=8;k++){
+    const d=document.createElement("div");
+    if(k===1) d.className="lead";
+    const im=document.createElement("img");
+    im.loading="lazy"; im.alt=i.n+" — foto "+k;
+    im.src="assets/fotos/"+i.s+"/"+String(k).padStart(2,"0")+".jpg";
+    im.addEventListener("error",()=>d.remove());
+    d.appendChild(im); g.appendChild(d);
+  }
+  ov.hidden=false; ov.scrollTop=0;
+  document.documentElement.style.overflow="hidden";
+}
+function closeCard(){ ov.hidden=true; document.documentElement.style.overflow=""; }
+document.getElementById("ovX").addEventListener("click",closeCard);
+ov.addEventListener("click",e=>{ if(e.target===ov) closeCard(); });
+document.addEventListener("keydown",e=>{ if(e.key==="Escape" && !ov.hidden) closeCard(); });
+
+document.getElementById("goSearch").addEventListener("click",()=>{
+  bairroSel=selB.value; faixaSel=document.getElementById("fFaixa").value;
+  render();
+  document.getElementById("imoveis").scrollIntoView({behavior:"smooth"});
+});
+
+const burger=document.getElementById("burger"), mob=document.getElementById("mobnav");
+burger.addEventListener("click",()=>{
+  const open = mob.getAttribute("data-open")==="1";
+  mob.setAttribute("data-open", open?"0":"1");
+  burger.setAttribute("aria-expanded", String(!open));
+});
+mob.querySelectorAll("a").forEach(a=>a.addEventListener("click",()=>{
+  mob.setAttribute("data-open","0"); burger.setAttribute("aria-expanded","false");
+}));
+
+document.querySelectorAll(".cpy").forEach(b=>{
+  b.addEventListener("click",()=>{
+    const t=document.getElementById(b.dataset.copy).textContent;
+    const done=()=>{ const o=b.textContent; b.textContent="Copiado"; setTimeout(()=>b.textContent=o,1600); };
+    try{ navigator.clipboard.writeText(t).then(done).catch(()=>{ const r=document.createRange(); r.selectNodeContents(document.getElementById(b.dataset.copy)); const s=getSelection(); s.removeAllRanges(); s.addRange(r); }); }
+    catch(e){ /* seleção manual */ }
+  });
+});
+
+render();
+
+const EQUIPE = [
+ {n:"Matheus Esdras", role:"Corretor e Sócio Administrador", ig:"matheus.esdras", f:"matheus.jpg"},
+ {n:"Kelljon Barbosa", role:"Corretor e Sócio Executivo", ig:"kelljonbarbosa", f:"kelljon.jpg"},
+ {n:"Bruno Montenegro", role:"Corretor", ig:"brunomontenegro.imoveis", f:"bruno.jpg"},
+ {n:"Leonardo Santos", role:"Corretor", ig:"_leosantoss", f:"leonardo.jpg"}
+];
+const teamGrid = document.getElementById("teamGrid");
+if(teamGrid){
+  teamGrid.innerHTML = EQUIPE.map(m =>
+    '<div class="tm">'+
+      '<img loading="lazy" src="assets/equipe/'+m.f+'" alt="'+m.n+'">'+
+      '<h3>'+m.n+'</h3>'+
+      '<span class="role">'+m.role+'</span>'+
+      '<a class="ig" href="https://www.instagram.com/'+m.ig+'/" target="_blank" rel="noopener">'+
+        '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-insta"></use></svg> @'+m.ig+
+      '</a>'+
+    '</div>'
+  ).join("");
+}
+</script>

@@ -68,5 +68,7 @@
       "nome": "Edvaldo J.",
       "texto": "O que poderia falar dessa empresa Eleva, sem comparação, e o corretor Matheus Esdras, excelente no atendimento, não deixa dúvida alguma, super indico, entrem em contato sem medo algum, Eleva essa eu garanto."
     }
-  ]
+  ],
+  "carrossel_minimo": 400000,
+  "carrossel_maximo": 8
 }

@@ -23,9 +23,9 @@
   }
 
   // Passador genérico (capa e depoimentos).
-  function passador(itens, pontos, ant, prox, intervalo) {
+  function passador(itens, pontos, ant, prox, intervalo, sempre) {
     if (itens.length < 2) { [ant, prox].forEach(function (b) { if (b) b.hidden = true; }); return; }
-    var i = 0, t = null, calmo = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var i = 0, t = null, calmo = !sempre && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     var ir = function (n) {
       itens[i].classList.remove("ativo"); if (pontos[i]) pontos[i].removeAttribute("aria-current");
       i = (n + itens.length) % itens.length;
@@ -47,7 +47,7 @@
     rodar();
   }
   var q = function (s) { return [].slice.call(document.querySelectorAll(s)); };
-  if (document.getElementById("slides")) passador(q("#slides .slide"), q("#pontos button"), document.getElementById("sAnt"), document.getElementById("sProx"), 6000);
+  if (document.getElementById("slides")) passador(q("#slides .slide"), q("#pontos button"), document.getElementById("sAnt"), document.getElementById("sProx"), 5500, true);
   if (document.getElementById("deps")) passador(q("#deps .dep"), [], document.getElementById("dAnt"), document.getElementById("dProx"), 0);
 
   // Pedido de simulação: formata os valores e abre o WhatsApp com a mensagem pronta.

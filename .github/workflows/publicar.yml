@@ -2,6 +2,8 @@ name: Publicar site
 on:
   push:
     branches: [conteudo]
+  schedule:
+    - cron: "17 9 * * *"
   workflow_dispatch:
 permissions:
   contents: write
@@ -13,10 +15,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: conteudo
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - run: pip install --quiet pillow
+      - name: Buscar avaliacoes de 5 estrelas no Google
+        continue-on-error: true
+        env:
+          GOOGLE_PLACES_KEY: ${{ secrets.GOOGLE_PLACES_KEY }}
+        run: python ferramentas/atualizar_depoimentos.py
       - name: Gerar o site a partir das pastas
         run: python ferramentas/gerar.py _site
       - name: Publicar (branch main, servido pelo GitHub Pages)
@@ -28,3 +37,10 @@ jobs:
           git add -A
           git commit -q -m "Site publicado a partir de ${GITHUB_SHA::7}"
           git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" main
+      - name: Guardar depoimentos novos
+        continue-on-error: true
+        run: |
+          git config user.name "Eleva Site"
+          git config user.email "site@users.noreply.github.com"
+          git add site/depoimentos.json
+          git diff --cached --quiet || (git commit -q -m "Depoimentos de 5 estrelas atualizados" && git pull -q --rebase origin conteudo && git push -q origin HEAD:conteudo)

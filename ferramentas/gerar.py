@@ -312,17 +312,39 @@ def cartao(im, r, h="h3"):
 </article>"""
 
 
+def google_atual():
+    """Nota, total e depoimentos de 5 estrelas. Vem de site/depoimentos.json (atualizado sozinho) ou do config."""
+    g, deps = dict(CFG["google"]), CFG["depoimentos"]
+    arq = SITE / "depoimentos.json"
+    if arq.is_file():
+        try:
+            d = json.loads(arq.read_text(encoding="utf-8"))
+            if d.get("nota"):
+                g["nota"] = str(d["nota"]).replace(".", ",")
+            if d.get("avaliacoes"):
+                g["avaliacoes"] = int(d["avaliacoes"])
+            novos = [x for x in d.get("itens", []) if int(x.get("nota", 5)) == 5 and x.get("texto") and x.get("nome")]
+            if novos:
+                deps = novos
+        except Exception as ex:
+            AVISOS.append(f"depoimentos.json ilegivel, usei os depoimentos do config ({ex}).")
+    return g, [x for x in deps if int(x.get("nota", 5)) == 5]
+
+
 def pag_inicio(imoveis, bairros):
     n = len(imoveis)
-    g = CFG["google"]
-    # Capa: empreendimentos em destaque primeiro; so fotos deitadas, que preenchem a tela.
-    cand = [i for i in imoveis if i["img"][0]["w"] >= i["img"][0]["h"] * 1.2]
-    cand.sort(key=lambda i: (not i["destaque"], -i["mtime"]))
+    g, deps_lista = google_atual()
+    # Capa: so empreendimentos acima do valor minimo (config: carrossel_minimo), com foto deitada.
+    minimo = float(CFG.get("carrossel_minimo", 0))
+    cand = [i for i in imoveis if i["img"][0]["w"] >= i["img"][0]["h"] * 1.2 and (i["preco"] or 0) > minimo]
+    cand.sort(key=lambda i: (not i["destaque"], -(i["preco"] or 0)))
     vistos, slides_im = set(), []
     for i in cand:                      # um por bairro primeiro, para variar
         if i["bslug"] not in vistos:
             vistos.add(i["bslug"]); slides_im.append(i)
-    slides_im = (slides_im + [i for i in cand if i not in slides_im])[:7] or imoveis[:1]
+    slides_im = (slides_im + [i for i in cand if i not in slides_im])[:int(CFG.get("carrossel_maximo", 8))]
+    if not slides_im:                   # nenhum acima do minimo: usa os melhores disponiveis
+        slides_im = sorted(imoveis, key=lambda i: -(i["preco"] or 0))[:5]
     slides = "".join(
         f'<a class="slide{" ativo" if k == 0 else ""}" href="imoveis/{i["slug"]}/" aria-label="{e(i["nome"])}, {e(i["bairro"])}">'
         f'<img src="imoveis/{i["slug"]}/{i["img"][0]["g"]}" alt="" width="{i["img"][0]["w"]}" height="{i["img"][0]["h"]}"{" fetchpriority=high" if k == 0 else " loading=lazy"}>'
@@ -335,7 +357,7 @@ def pag_inicio(imoveis, bairros):
     deps = "".join(
         f'<figure class="dep{" ativo" if k == 0 else ""}"><blockquote><p>{e(d["texto"])}</p></blockquote>'
         f'<figcaption><span class="dep-letra" aria-hidden="true">{e(d["nome"][0])}</span><span><strong>{e(d["nome"])}</strong>Avaliação no Google</span></figcaption></figure>'
-        for k, d in enumerate(CFG["depoimentos"]))
+        for k, d in enumerate(deps_lista))
     equipe = "".join(
         f'<li><img src="equipe/{e(m["foto"])}" alt="" width="500" height="500" loading="lazy">'
         f'<h3>{e(m["nome"])}</h3><p>{e(m["cargo"])}</p>'

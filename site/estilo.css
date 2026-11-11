@@ -39,7 +39,20 @@ ul,ol{margin:0;padding:0;list-style:none}
 .menu .menu-wa{border:1px solid rgba(255,255,255,.45);padding:9px 16px;font-variant-numeric:tabular-nums}
 .menu .menu-wa:hover{background:#fff;color:var(--azul);border-color:#fff}
 .menu-btn{display:none;background:none;border:1px solid rgba(255,255,255,.45);color:#fff;font:inherit;font-size:15px;padding:8px 14px;cursor:pointer}
+.sub{position:relative}
+.sub-btn{background:none;border:0;color:#fff;font:inherit;cursor:pointer;padding:6px 0;display:flex;align-items:center;gap:8px}
+.sub-btn::after{content:"";width:7px;height:7px;border-right:1.5px solid;border-bottom:1.5px solid;transform:rotate(45deg) translateY(-3px)}
+.sub-lista{display:none;position:absolute;left:-18px;top:calc(100% + 14px);min-width:250px;background:var(--papel);color:var(--tinta);padding:10px 0;box-shadow:0 18px 40px rgba(20,24,56,.22)}
+.sub[data-aberto] .sub-lista{display:block}
+.menu .sub-lista a{display:block;padding:9px 18px;border:0}
+.menu .sub-lista a:hover{background:var(--areia)}
+.sub-todos{border-top:1px solid var(--fio);margin-top:6px;padding-top:6px;font-weight:600}
 @media (max-width:860px){
+  .sub-lista{position:static;box-shadow:none;background:none;color:#fff;padding:0 0 8px 14px;min-width:0}
+  .sub-btn{width:100%;justify-content:space-between;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.12);font-size:17px}
+  .menu .sub-lista a{padding:10px 0;font-size:16px}
+  .menu .sub-lista a:hover{background:none}
+  .sub-todos{border-top:0}
   .menu-btn{display:block}
   .menu{display:none;position:absolute;left:0;right:0;top:100%;background:var(--azul);flex-direction:column;align-items:stretch;gap:0;padding:6px clamp(18px,4vw,40px) 20px;border-top:1px solid rgba(255,255,255,.15)}
   .menu[data-aberto]{display:flex}
@@ -47,25 +60,91 @@ ul,ol{margin:0;padding:0;list-style:none}
   .menu .menu-wa{margin-top:16px;text-align:center;padding:14px}
 }
 
-/* Capa: foto de Maceió + índice de bairros */
-.capa{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);background:var(--azul);color:#fff;min-height:min(78vh,760px)}
-.capa-foto{position:relative;overflow:hidden;background:var(--azul-fundo)}
-.capa-foto img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:opacity .25s}
-.capa-foto img.trocando{opacity:0}
-.capa-txt{padding:clamp(32px,5vw,72px) clamp(18px,4vw,56px);display:flex;flex-direction:column;justify-content:center;max-width:640px}
-.capa-txt h1{font-size:clamp(2rem,3.6vw,3.2rem)}
-.capa-txt>p{color:rgba(255,255,255,.8);margin:18px 0 28px;max-width:44ch}
-.indice{border-top:1px solid rgba(255,255,255,.22)}
-.indice a{display:flex;justify-content:space-between;align-items:baseline;gap:16px;padding:11px 2px;border-bottom:1px solid rgba(255,255,255,.22);text-decoration:none;font-stretch:125%;font-size:clamp(1.05rem,1.5vw,1.3rem);letter-spacing:-.01em}
-.indice a:hover,.indice a:focus-visible{color:var(--ouro);border-bottom-color:var(--ouro)}
-.indice .qt{font-stretch:100%;font-size:.95rem;color:rgba(255,255,255,.65);font-variant-numeric:tabular-nums}
-.indice-todos{margin-top:22px;align-self:flex-start;color:#fff;text-underline-offset:5px;text-decoration-color:var(--ouro)}
-@media (min-width:861px){.indice-2{columns:2;column-gap:32px;border-top:0}.indice-2 li{break-inside:avoid}.indice-2 a{font-size:1.05rem}}
-@media (max-width:860px){
-  .capa{grid-template-columns:1fr;min-height:0}
-  .capa-foto{aspect-ratio:16/10}
-  .capa-txt{max-width:none}
-}
+/* Capa: carrossel de empreendimentos + faixa azul com a chamada */
+.slides{position:relative;aspect-ratio:1440/620;max-height:74vh;min-height:300px;width:100%;overflow:hidden;background:var(--azul-fundo)}
+.slide{position:absolute;inset:0;opacity:0;visibility:hidden;transition:opacity .7s ease,visibility 0s .7s;color:#fff;text-decoration:none}
+.slide.ativo{opacity:1;visibility:visible;transition:opacity .7s ease}
+.slide img{width:100%;height:100%;object-fit:cover}
+.slide::after{content:"";position:absolute;inset:auto 0 0 0;height:45%;background:linear-gradient(transparent,rgba(20,24,56,.72))}
+.slide-nome{position:absolute;z-index:1;right:clamp(64px,9vw,150px);bottom:clamp(20px,5vw,56px);text-align:right;font-size:1rem;display:flex;flex-direction:column;gap:2px}
+.slide-nome strong{font-stretch:125%;font-weight:600;font-style:italic;font-size:clamp(1.4rem,3.2vw,2.5rem);letter-spacing:-.02em;line-height:1.1}
+.s-seta{position:absolute;z-index:2;top:50%;transform:translateY(-50%);width:52px;height:52px;background:none;border:0;color:#fff;font-size:44px;line-height:1;cursor:pointer;text-shadow:0 1px 8px rgba(0,0,0,.5)}
+.s-seta:hover{color:var(--ouro)}
+.s-ant{left:clamp(6px,2vw,28px)}.s-prox{right:clamp(6px,2vw,28px)}
+.capa-faixa{background:var(--azul);color:#fff;padding-block:clamp(36px,5vw,64px) 26px}
+.capa-in{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:clamp(24px,5vw,80px);align-items:end}
+.capa-in h1{font-size:clamp(2.3rem,5.4vw,4.4rem);font-weight:600}
+.capa-acao p{color:rgba(255,255,255,.82);margin:0 0 22px;max-width:40ch}
+.pontos{display:flex;justify-content:center;gap:8px;margin-top:clamp(28px,4vw,48px)}
+.pontos button{width:34px;height:4px;padding:0;border:0;background:rgba(255,255,255,.3);cursor:pointer}
+.pontos button[aria-current]{background:#fff}
+@media (max-width:860px){.capa-in{grid-template-columns:1fr}.slides{aspect-ratio:4/3}.pontos button{width:22px}}
+
+/* Atalhos por bairro */
+.bairros{background:var(--areia);padding-block:clamp(36px,5vw,56px)}
+.bairros h2{font-size:1.3rem;margin-bottom:18px}
+.atalhos{display:flex;flex-wrap:wrap;gap:10px}
+.atalhos a{display:flex;align-items:baseline;gap:12px;background:var(--papel);border:1px solid var(--azul);color:var(--azul);text-decoration:none;padding:12px 18px;font-weight:500}
+.atalhos a:hover{background:var(--azul);color:#fff}
+.atalhos .qt{font-size:14px;opacity:.7;font-variant-numeric:tabular-nums}
+
+/* Por que a Eleva + números */
+.porque{background:var(--azul-fundo);color:#fff;padding-block:clamp(64px,9vw,120px);position:relative;overflow:hidden}
+.porque-in{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:clamp(28px,6vw,96px);align-items:end;position:relative}
+.porque h2{font-size:clamp(2rem,4.6vw,3.8rem);font-weight:600}
+.porque p{color:rgba(255,255,255,.82);margin-bottom:24px}
+.marca-dagua{position:absolute;right:-60px;top:-140px;width:420px;opacity:.06;pointer-events:none}
+.numeros{background:var(--papel);padding-block:clamp(44px,6vw,80px)}
+.numeros-in{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:32px}
+.numeros strong{display:block;font-stretch:125%;font-weight:600;font-size:clamp(2rem,4vw,3.2rem);letter-spacing:-.03em;color:var(--azul);line-height:1.05;font-variant-numeric:tabular-nums}
+.numeros span{display:block;margin-top:8px;color:var(--cinza);font-size:15.5px;max-width:22ch}
+.numeros-in>div{border-top:3px solid var(--ouro);padding-top:18px}
+@media (max-width:860px){.porque-in{grid-template-columns:1fr}.numeros-in{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Depoimentos */
+.depoimentos{background:var(--azul);color:#fff;padding-block:clamp(56px,8vw,104px)}
+.depoimentos h2{margin-bottom:clamp(24px,4vw,44px)}
+.deps{display:grid}
+.dep{grid-area:1/1;margin:0;opacity:0;visibility:hidden;transition:opacity .4s}
+.dep.ativo{opacity:1;visibility:visible}
+.dep blockquote{margin:0}
+.dep p{font-size:clamp(1.2rem,2.3vw,1.75rem);line-height:1.4;max-width:34em;margin:0;font-weight:300}
+.dep p::before{content:"\201C"}.dep p::after{content:"\201D"}
+.dep figcaption{display:flex;align-items:center;gap:14px;margin-top:28px;font-size:15px;color:rgba(255,255,255,.75)}
+.dep figcaption strong{display:block;color:#fff;font-size:1.05rem}
+.dep-letra{width:48px;height:48px;border-radius:50%;background:var(--ouro);color:var(--azul-fundo);display:grid;place-items:center;font-stretch:125%;font-weight:600;font-size:1.3rem}
+.deps-nav{display:flex;align-items:center;gap:10px;margin-top:34px}
+.deps-nav button{width:48px;height:48px;background:none;border:1px solid rgba(255,255,255,.45);color:#fff;font-size:26px;line-height:1;cursor:pointer}
+.deps-nav button:hover{background:#fff;color:var(--azul)}
+.deps-nav a{margin-left:14px;color:#fff;text-underline-offset:5px;text-decoration-color:var(--ouro)}
+
+/* Blocos temáticos de cor cheia, com formas tiradas do símbolo da Eleva (telhado e arco) */
+.tema{padding-block:clamp(64px,9vw,128px);overflow:hidden}
+.tema-areia{background:var(--areia)}
+.tema-ouro{background:#D9BE9C}
+.tema-azul{background:var(--azul);color:#fff}
+.tema-in{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(32px,6vw,96px);align-items:center}
+.tema h2{font-size:clamp(2rem,4.4vw,3.6rem);font-weight:600;margin-bottom:20px}
+.tema p{max-width:46ch;margin-bottom:26px}
+.tema-azul p{color:rgba(255,255,255,.82)}
+.tema .botao+.botao{margin-left:10px}
+.formas{position:relative;height:clamp(220px,30vw,380px)}
+.formas i{position:absolute;display:block}
+.formas-a i:nth-child(1){left:8%;bottom:0;width:46%;height:78%;background:var(--azul);clip-path:polygon(50% 0,100% 34%,100% 100%,0 100%,0 34%)}
+.formas-a i:nth-child(2){left:44%;bottom:0;width:34%;height:52%;background:var(--ouro);border-radius:999px 999px 0 0}
+.formas-a i:nth-child(3){left:70%;bottom:0;width:26%;height:36%;background:var(--azul-fundo);clip-path:polygon(50% 0,100% 40%,100% 100%,0 100%,0 40%)}
+.formas-b i:nth-child(1){left:6%;top:6%;width:52%;aspect-ratio:1;background:var(--areia);border-radius:50%}
+.formas-b i:nth-child(2){left:34%;bottom:0;width:50%;height:66%;background:var(--azul);clip-path:polygon(50% 0,100% 34%,100% 100%,0 100%,0 34%)}
+.formas-b i:nth-child(3){left:0;bottom:0;width:38%;height:30%;background:var(--azul-fundo)}
+@media (max-width:860px){.tema-in{grid-template-columns:1fr}.formas{height:200px}.formas-b{order:2}}
+
+/* Pedido de simulação */
+.simula{display:grid;gap:16px;background:var(--azul-fundo);padding:clamp(22px,3vw,36px)}
+.simula label{display:grid;gap:6px;font-size:15px;color:rgba(255,255,255,.82)}
+.simula input{font:inherit;font-size:1.1rem;padding:13px 14px;border:1px solid rgba(255,255,255,.35);background:transparent;color:#fff;border-radius:0;font-variant-numeric:tabular-nums}
+.simula input::placeholder{color:rgba(255,255,255,.4)}
+.simula input:focus{outline:2px solid var(--ouro);outline-offset:0;border-color:var(--ouro)}
+.simula .botao{margin-top:6px}
 
 /* Blocos */
 .bloco{padding-block:clamp(56px,8vw,104px)}
@@ -122,10 +201,14 @@ ul,ol{margin:0;padding:0;list-style:none}
 .chamada-in{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:28px 48px}
 .chamada h2{max-width:22ch}
 .chamada p{margin:12px 0 0;color:rgba(255,255,255,.8)}
-.botao{display:inline-block;background:var(--azul);color:#fff;text-decoration:none;font-weight:500;padding:16px 26px;border:1px solid var(--azul);text-align:center;cursor:pointer}
+.botao{font:inherit;font-weight:500;display:inline-block;background:var(--azul);color:#fff;text-decoration:none;font-weight:500;padding:16px 26px;border:1px solid var(--azul);text-align:center;cursor:pointer}
 .botao:hover{background:var(--azul-fundo)}
 .botao-claro{background:var(--areia);color:var(--azul);border-color:var(--areia)}
 .botao-claro:hover{background:#fff}
+.botao-ouro{background:var(--ouro);color:var(--azul-fundo);border-color:var(--ouro)}
+.botao-ouro:hover{background:#d3b28e}
+.botao-contorno{background:none;color:var(--azul)}
+.botao-contorno:hover{background:var(--azul);color:#fff}
 
 /* Páginas internas */
 .cabeca{padding-top:clamp(28px,4vw,48px)}
@@ -179,11 +262,9 @@ ul,ol{margin:0;padding:0;list-style:none}
 
 /* Rodapé */
 .rodape{background:var(--azul-fundo);color:rgba(255,255,255,.78);font-size:15px}
-.rodape-in{display:grid;grid-template-columns:1.3fr 1.4fr 1fr;gap:40px;padding-block:56px 40px}
+.rodape-in{display:grid;grid-template-columns:1.1fr 1.2fr 1.2fr 1.3fr;gap:40px;padding-block:56px 40px}
 .rodape h2{font-size:.95rem;font-stretch:100%;font-weight:600;letter-spacing:0;color:#fff;margin-bottom:12px}
 .rodape img{height:34px;width:auto;margin-bottom:16px}
-.rodape ul{columns:2;column-gap:24px}
-.rodape li{padding:3px 0;break-inside:avoid}
 .rodape a{text-decoration:none}
 .rodape a:hover{color:#fff;text-decoration:underline;text-decoration-color:var(--ouro);text-underline-offset:4px}
 .rodape-fim{border-top:1px solid rgba(255,255,255,.14);padding-block:20px;font-size:13.5px;color:rgba(255,255,255,.6)}

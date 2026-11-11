@@ -12,26 +12,62 @@
     });
   }
 
-  // Capa: passar o mouse num bairro mostra um empreendimento de lá.
-  var capa = document.getElementById("capaImg");
-  if (capa && window.matchMedia("(hover:hover)").matches) {
-    var original = capa.getAttribute("src"), espera;
-    var trocar = function (src) {
-      clearTimeout(espera);
-      if (capa.getAttribute("src") === src) return;
-      capa.classList.add("trocando");
-      espera = setTimeout(function () {
-        var pre = new Image();
-        pre.onload = pre.onerror = function () { capa.src = src; capa.classList.remove("trocando"); };
-        pre.src = src;
-      }, 180);
+  // Menu "Imóveis" com a lista de bairros.
+  var sub = document.querySelector(".sub");
+  if (sub) {
+    var sb = sub.querySelector(".sub-btn");
+    var abrir = function (v) { sub.toggleAttribute("data-aberto", v); sb.setAttribute("aria-expanded", String(v)); };
+    sb.addEventListener("click", function (ev) { ev.stopPropagation(); abrir(!sub.hasAttribute("data-aberto")); });
+    document.addEventListener("click", function (ev) { if (!sub.contains(ev.target)) abrir(false); });
+    document.addEventListener("keydown", function (ev) { if (ev.key === "Escape") abrir(false); });
+  }
+
+  // Passador genérico (capa e depoimentos).
+  function passador(itens, pontos, ant, prox, intervalo) {
+    if (itens.length < 2) { [ant, prox].forEach(function (b) { if (b) b.hidden = true; }); return; }
+    var i = 0, t = null, calmo = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var ir = function (n) {
+      itens[i].classList.remove("ativo"); if (pontos[i]) pontos[i].removeAttribute("aria-current");
+      i = (n + itens.length) % itens.length;
+      itens[i].classList.add("ativo"); if (pontos[i]) pontos[i].setAttribute("aria-current", "true");
     };
-    document.querySelectorAll(".indice a").forEach(function (a) {
-      a.addEventListener("mouseenter", function () { trocar(a.dataset.capa); });
-      a.addEventListener("focus", function () { trocar(a.dataset.capa); });
+    var rodar = function () { clearInterval(t); if (intervalo && !calmo) t = setInterval(function () { ir(i + 1); }, intervalo); };
+    ant.addEventListener("click", function () { ir(i - 1); rodar(); });
+    prox.addEventListener("click", function () { ir(i + 1); rodar(); });
+    pontos.forEach(function (p, k) { p.addEventListener("click", function () { ir(k); rodar(); }); });
+    var caixa = itens[0].parentNode, x0 = null;
+    caixa.addEventListener("mouseenter", function () { clearInterval(t); });
+    caixa.addEventListener("mouseleave", rodar);
+    caixa.addEventListener("touchstart", function (ev) { x0 = ev.touches[0].clientX; }, { passive: true });
+    caixa.addEventListener("touchend", function (ev) {
+      if (x0 === null) return;
+      var dx = ev.changedTouches[0].clientX - x0; x0 = null;
+      if (Math.abs(dx) > 45) { ir(i + (dx < 0 ? 1 : -1)); rodar(); }
     });
-    var lista = document.querySelector(".indice");
-    lista.addEventListener("mouseleave", function () { trocar(original); });
+    rodar();
+  }
+  var q = function (s) { return [].slice.call(document.querySelectorAll(s)); };
+  if (document.getElementById("slides")) passador(q("#slides .slide"), q("#pontos button"), document.getElementById("sAnt"), document.getElementById("sProx"), 6000);
+  if (document.getElementById("deps")) passador(q("#deps .dep"), [], document.getElementById("dAnt"), document.getElementById("dProx"), 0);
+
+  // Pedido de simulação: formata os valores e abre o WhatsApp com a mensagem pronta.
+  var sim = document.getElementById("simula");
+  if (sim) {
+    q("#simula input").forEach(function (inp) {
+      inp.addEventListener("input", function () {
+        var d = inp.value.replace(/\D/g, "").replace(/^0+/, "");
+        inp.value = d ? "R$ " + d.replace(/\B(?=(\d{3})+(?!\d))/g, ".") : "";
+      });
+    });
+    sim.addEventListener("submit", function (ev) {
+      ev.preventDefault();
+      var v = sim.valor.value, r = sim.renda.value, en = sim.entrada.value;
+      var msg = "Olá! Vim pelo site da Eleva e quero uma simulação de financiamento.";
+      if (v) msg += "\nValor do imóvel: " + v;
+      if (r) msg += "\nRenda mensal da família: " + r;
+      if (en) msg += "\nEntrada disponível: " + en;
+      window.open("https://wa.me/" + sim.dataset.wa + "?text=" + encodeURIComponent(msg), "_blank", "noopener");
+    });
   }
 
   // Filtros da lista de empreendimentos.

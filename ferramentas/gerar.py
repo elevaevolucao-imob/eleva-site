@@ -253,9 +253,11 @@ def pagina(r, titulo, desc, corpo, caminho="", og=None, extra_head=""):
     <a class="marca" href="{r or './'}" aria-label="{e(CFG['nome'])}, página inicial"><img src="{r}img/logo.png" alt="{e(CFG['nome'])}" width="170" height="42"></a>
     <button class="menu-btn" aria-expanded="false" aria-controls="menu">Menu</button>
     <nav id="menu" class="menu" aria-label="Principal">
-      <a href="{r}#imoveis">Imóveis</a>
-      <a href="{r}#bairros">Bairros</a>
+      <div class="sub"><button type="button" class="sub-btn" aria-expanded="false">Imóveis</button>
+        <ul class="sub-lista">{RODAPE_BAIRROS.replace('{r}', r)}<li class="sub-todos"><a href="{r}#imoveis">Ver todos os imóveis</a></li></ul></div>
       <a href="{r}#eleva">A Eleva</a>
+      <a href="{r}#depoimentos">Depoimentos</a>
+      <a href="{r}#simulacao">Simulação</a>
       <a href="{r}#equipe">Equipe</a>
       <a class="menu-wa" href="{wa('Olá! Vim pelo site da Eleva.')}" target="_blank" rel="noopener">WhatsApp {fone()}</a>
     </nav>
@@ -268,15 +270,20 @@ def pagina(r, titulo, desc, corpo, caminho="", og=None, extra_head=""):
   <div class="faixa rodape-in">
     <div>
       <img src="{r}img/logo.png" alt="{e(CFG['nome'])}" width="150" height="37" loading="lazy">
-      <p>Compra, venda e lançamentos em {e(CFG['cidade'])}, {e(CFG['uf'])}.<br>CRECI {e(CFG['creci'])}</p>
+      <p>CRECI {e(CFG['creci'])}</p>
     </div>
-    <nav aria-label="Bairros">
-      <h2>Bairros</h2>
-      <ul>{RODAPE_BAIRROS.replace('{r}', r)}</ul>
-    </nav>
     <div>
-      <h2>Atendimento</h2>
-      <p><a href="{wa('Olá! Vim pelo site da Eleva.')}" target="_blank" rel="noopener">WhatsApp {fone()}</a><br>Visitas aos empreendimentos com hora marcada.</p>
+      <h2>Fale conosco</h2>
+      <p><a href="{wa('Olá! Vim pelo site da Eleva.')}" target="_blank" rel="noopener">WhatsApp {fone()}</a><br>
+      <a href="https://www.instagram.com/{e(CFG['instagram'])}/" target="_blank" rel="noopener">Instagram @{e(CFG['instagram'])}</a></p>
+    </div>
+    <div>
+      <h2>Endereço</h2>
+      <p>{'<br>'.join(e(x) for x in CFG['endereco'])}</p>
+    </div>
+    <div>
+      <h2>Atendimento presencial</h2>
+      <p>{'<br>'.join(e(x) for x in CFG['horario'])}</p>
     </div>
   </div>
   <div class="faixa rodape-fim">© {date.today().year} {e(CFG['nome'])}. Valores e disponibilidade podem mudar conforme unidade, andar e data.</div>
@@ -307,26 +314,59 @@ def cartao(im, r, h="h3"):
 
 def pag_inicio(imoveis, bairros):
     n = len(imoveis)
-    itens = "".join(
-        f'<li><a href="bairros/{b["slug"]}/" data-capa="imoveis/{b["itens"][0]["slug"]}/{b["itens"][0]["img"][0]["g"]}">'
-        f'<span>{e(b["nome"])}</span><span class="qt">{len(b["itens"])}</span></a></li>' for b in bairros)
+    g = CFG["google"]
+    # Capa: empreendimentos em destaque primeiro; so fotos deitadas, que preenchem a tela.
+    cand = [i for i in imoveis if i["img"][0]["w"] >= i["img"][0]["h"] * 1.2]
+    cand.sort(key=lambda i: (not i["destaque"], -i["mtime"]))
+    vistos, slides_im = set(), []
+    for i in cand:                      # um por bairro primeiro, para variar
+        if i["bslug"] not in vistos:
+            vistos.add(i["bslug"]); slides_im.append(i)
+    slides_im = (slides_im + [i for i in cand if i not in slides_im])[:7] or imoveis[:1]
+    slides = "".join(
+        f'<a class="slide{" ativo" if k == 0 else ""}" href="imoveis/{i["slug"]}/" aria-label="{e(i["nome"])}, {e(i["bairro"])}">'
+        f'<img src="imoveis/{i["slug"]}/{i["img"][0]["g"]}" alt="" width="{i["img"][0]["w"]}" height="{i["img"][0]["h"]}"{" fetchpriority=high" if k == 0 else " loading=lazy"}>'
+        f'<span class="slide-nome"><strong>{e(i["nome"])}</strong>{e(i["bairro"])}</span></a>' for k, i in enumerate(slides_im))
+    pontos = "".join(f'<button type="button" aria-label="Mostrar {e(i["nome"])}"{" aria-current=true" if k == 0 else ""}></button>'
+                     for k, i in enumerate(slides_im))
+    atalhos = "".join(f'<li><a href="bairros/{b["slug"]}/"><span>{e(b["nome"])}</span><span class="qt">{len(b["itens"])}</span></a></li>' for b in bairros)
     opcoes = "".join(f'<option value="{b["slug"]}">{e(b["nome"])}</option>' for b in bairros)
-    ordenados = sorted(imoveis, key=lambda i: (not i["destaque"],))
-    cartoes = "\n".join(cartao(i, "") for i in ordenados)
+    cartoes = "\n".join(cartao(i, "") for i in imoveis)
+    deps = "".join(
+        f'<figure class="dep{" ativo" if k == 0 else ""}"><blockquote><p>{e(d["texto"])}</p></blockquote>'
+        f'<figcaption><span class="dep-letra" aria-hidden="true">{e(d["nome"][0])}</span><span><strong>{e(d["nome"])}</strong>Avaliação no Google</span></figcaption></figure>'
+        for k, d in enumerate(CFG["depoimentos"]))
     equipe = "".join(
         f'<li><img src="equipe/{e(m["foto"])}" alt="" width="500" height="500" loading="lazy">'
         f'<h3>{e(m["nome"])}</h3><p>{e(m["cargo"])}</p>'
         f'<a href="https://www.instagram.com/{e(m["instagram"])}/" target="_blank" rel="noopener">@{e(m["instagram"])}</a></li>'
         for m in CFG["equipe"])
+    mcmv = [i for i in imoveis if "minha casa" in sem_acento(i["selo"] or "")]
+    mcmv_link = (f'<a class="botao botao-contorno" href="imoveis/{mcmv[0]["slug"]}/">Ver {e(mcmv[0]["nome"])}</a>' if len(mcmv) == 1
+                 else '')
     nomes = [b["nome"] for b in bairros]
     lista_b = (", ".join(nomes[:-1]) + " e " + nomes[-1]) if len(nomes) > 1 else (nomes[0] if nomes else "")
-    corpo = f"""<section class="capa">
-  <div class="capa-foto"><img id="capaImg" src="img/mcz.jpg" alt="Vista aérea da orla de Maceió" width="1800" height="1125" fetchpriority="high"></div>
-  <div class="capa-txt">
-    <h1>Imóveis em Maceió, bairro por bairro.</h1>
-    <p>Lançamentos e apartamentos prontos, do Minha Casa Minha Vida ao alto padrão na orla. Escolha um bairro para começar.</p>
-    <ul class="indice{' indice-2' if len(bairros) > 10 else ''}" id="bairros">{itens}</ul>
-    <a class="indice-todos" href="#imoveis">Ver os {n} empreendimentos</a>
+    corpo = f"""<section class="capa" aria-label="Empreendimentos em destaque">
+  <div class="slides" id="slides">{slides}
+    <button type="button" class="s-seta s-ant" id="sAnt" aria-label="Empreendimento anterior">&#8249;</button>
+    <button type="button" class="s-seta s-prox" id="sProx" aria-label="Próximo empreendimento">&#8250;</button>
+  </div>
+  <div class="capa-faixa">
+    <div class="faixa capa-in">
+      <h1>Do primeiro ao próximo imóvel.</h1>
+      <div class="capa-acao">
+        <p>Lançamentos e imóveis prontos em Maceió, com um corretor ao seu lado antes, durante e depois da compra.</p>
+        <a class="botao botao-ouro" href="#imoveis">Veja nossos empreendimentos</a>
+      </div>
+    </div>
+    <div class="faixa"><div class="pontos" id="pontos">{pontos}</div></div>
+  </div>
+</section>
+
+<section class="bairros" id="bairros">
+  <div class="faixa">
+    <h2>Escolha pelo bairro</h2>
+    <ul class="atalhos">{atalhos}</ul>
   </div>
 </section>
 
@@ -352,19 +392,72 @@ def pag_inicio(imoveis, bairros):
   </div>
 </section>
 
-<section class="bloco areia" id="eleva">
-  <div class="faixa duas">
+<section class="porque" id="eleva">
+  <div class="faixa porque-in">
+    <img class="marca-dagua" src="img/icone.png" alt="" aria-hidden="true" loading="lazy">
+    <h2>A Eleva continua com você depois da assinatura.</h2>
     <div>
-      <h2>A conta vem antes do imóvel.</h2>
-      <p>A Eleva Evolução Imobiliária trabalha com compra, venda e lançamentos em Maceió. O atendimento começa pela sua conta: renda, FGTS, subsídio e prazo. Só depois entram os imóveis que cabem nela.</p>
-      <p>Hoje são {n} empreendimentos em {len(bairros)} bairros: {e(lista_b)}.</p>
+      <p>Nosso trabalho é elevar a sua experiência na conquista do imóvel. Isso começa pela conta que cabe no seu mês e não termina quando o contrato é assinado: o corretor que atendeu você segue disponível até as chaves e depois delas.</p>
+      <a class="botao botao-claro" href="https://www.instagram.com/{e(CFG['instagram'])}/" target="_blank" rel="noopener">Conheça a Eleva no Instagram</a>
     </div>
-    <ol class="passos">
-      <li><h3>Conversa</h3><p>Você conta o bairro, o tamanho e quanto cabe no mês. Um corretor acompanha você do início ao fim.</p></li>
-      <li><h3>Simulação</h3><p>Montamos a conta com FGTS, subsídio e parcelamento direto com a construtora.</p></li>
-      <li><h3>Visita</h3><p>Você conhece o decorado ou o imóvel pronto, com hora marcada.</p></li>
-      <li><h3>Contrato e chaves</h3><p>Documentação conferida e negociação acompanhada até a entrega das chaves.</p></li>
-    </ol>
+  </div>
+</section>
+<section class="numeros" aria-label="A Eleva em números">
+  <div class="faixa numeros-in">
+    <div><strong>{e(CFG['negocios'])}</strong><span>em negócios gerados</span></div>
+    <div><strong>{e(g['nota'])}</strong><span>de nota no Google, em {g['avaliacoes']} avaliações</span></div>
+    <div><strong>{n}</strong><span>empreendimentos no site</span></div>
+    <div><strong>{len(bairros)}</strong><span>bairros de Maceió</span></div>
+  </div>
+</section>
+
+<section class="depoimentos" id="depoimentos">
+  <div class="faixa">
+    <h2>Quem comprou com a Eleva</h2>
+    <div class="deps" id="deps">{deps}</div>
+    <div class="deps-nav">
+      <button type="button" id="dAnt" aria-label="Depoimento anterior">&#8249;</button>
+      <button type="button" id="dProx" aria-label="Próximo depoimento">&#8250;</button>
+      <a href="{e(g['link'])}" target="_blank" rel="noopener">Ler as {g['avaliacoes']} avaliações no Google</a>
+    </div>
+  </div>
+</section>
+
+<section class="tema tema-areia">
+  <div class="faixa tema-in">
+    <div>
+      <h2>Comprando o seu primeiro imóvel.</h2>
+      <p>Você não precisa chegar sabendo. Conte o bairro, o tamanho e quanto cabe no mês: a gente explica cada etapa e mostra só o que entra na sua conta.</p>
+      <a class="botao" href="#imoveis">Veja nossos empreendimentos</a>
+    </div>
+    <div class="formas formas-a" aria-hidden="true"><i></i><i></i><i></i></div>
+  </div>
+</section>
+
+<section class="tema tema-ouro">
+  <div class="faixa tema-in">
+    <div class="formas formas-b" aria-hidden="true"><i></i><i></i><i></i></div>
+    <div>
+      <h2>Minha Casa Minha Vida.</h2>
+      <p>O programa habitacional do Governo Federal reduz a entrada e os juros conforme a renda da família. A Eleva confere em qual faixa você se encaixa e quais empreendimentos entram no programa.</p>
+      <a class="botao" href="{wa('Olá! Quero saber se me encaixo no Minha Casa Minha Vida.')}" target="_blank" rel="noopener">Quero saber mais</a>
+      {mcmv_link}
+    </div>
+  </div>
+</section>
+
+<section class="tema tema-azul" id="simulacao">
+  <div class="faixa tema-in">
+    <div>
+      <h2>Planeje o seu financiamento.</h2>
+      <p>Informe o valor do imóvel, a sua renda e a entrada. Um corretor devolve a simulação com parcelas e prazos pelo WhatsApp.</p>
+    </div>
+    <form class="simula" id="simula" data-wa="{WA}">
+      <label>Valor do imóvel <input name="valor" inputmode="numeric" placeholder="R$ 350.000" autocomplete="off"></label>
+      <label>Renda mensal da família <input name="renda" inputmode="numeric" placeholder="R$ 6.000" autocomplete="off"></label>
+      <label>Entrada disponível, com FGTS <input name="entrada" inputmode="numeric" placeholder="R$ 40.000" autocomplete="off"></label>
+      <button class="botao botao-ouro" type="submit">Pedir simulação no WhatsApp</button>
+    </form>
   </div>
 </section>
 
@@ -374,15 +467,13 @@ def pag_inicio(imoveis, bairros):
     <ul class="equipe">{equipe}</ul>
   </div>
 </section>
-
-{chamada('Diga o bairro e o valor que cabe no seu mês.', 'A gente responde com as opções e a simulação.', 'Olá! Vim pelo site da Eleva e gostaria de falar sobre imóveis em Maceió.')}
 """
     ld = json.dumps({"@context": "https://schema.org", "@type": "RealEstateAgent", "name": CFG["nome"], "url": URL,
                      "image": URL + "img/mcz.jpg", "telephone": "+" + WA,
-                     "address": {"@type": "PostalAddress", "addressLocality": CFG["cidade"], "addressRegion": CFG["uf"], "addressCountry": "BR"}},
-                    ensure_ascii=False)
-    return pagina("", f"{CFG['nome']} | Imóveis em Maceió por bairro",
-                  f"Lançamentos e apartamentos prontos em Maceió: {lista_b}. Fotos, valores a partir de e atendimento pelo WhatsApp.",
+                     "address": {"@type": "PostalAddress", "streetAddress": CFG["endereco"][0], "addressLocality": CFG["cidade"],
+                                 "addressRegion": CFG["uf"], "addressCountry": "BR"}}, ensure_ascii=False)
+    return pagina("", f"{CFG['nome']} | Imóveis em Maceió",
+                  f"Lançamentos e imóveis prontos em Maceió: {lista_b}. Fotos, valores a partir de e atendimento pelo WhatsApp.",
                   corpo, "", extra_head=f'<script type="application/ld+json">{ld}</script>\n')
 
 

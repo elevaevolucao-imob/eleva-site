@@ -26,9 +26,9 @@ function Gravar-Status($linhas) {
     [IO.File]::WriteAllLines($ArqStatus, [string[]]($cab + $linhas), (New-Object Text.UTF8Encoding($true)))
 }
 
-function Git {
+function Rodar-Git {
     $antes = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
-    $saida = & git -C $Repo @args 2>&1 | ForEach-Object { "$_" }
+    $saida = & git.exe -C $Repo @args 2>&1 | ForEach-Object { "$_" }
     $codigo = $LASTEXITCODE; $ErrorActionPreference = $antes
     if ($codigo -ne 0) { throw ("git " + ($args -join ' ') + ": " + ($saida -join ' ')) }
     return $saida
@@ -134,8 +134,8 @@ try {
 
     # 2. Deixa a copia de trabalho igual ao que esta no GitHub
     Dizer 'Conferindo com o site...'
-    Git fetch --quiet origin conteudo | Out-Null
-    Git reset --quiet --hard origin/conteudo | Out-Null
+    Rodar-Git fetch --quiet origin conteudo | Out-Null
+    Rodar-Git reset --quiet --hard origin/conteudo | Out-Null
 
     # 3. Espelha a pasta do usuario (fotos grandes sao reduzidas na copia; os originais ficam intactos)
     Add-Type -AssemblyName System.Drawing
@@ -164,15 +164,15 @@ try {
     }
 
     # 4. Envia se houver diferenca
-    Git add -A imoveis | Out-Null
-    $mudou = @(Git status --porcelain)
+    Rodar-Git add -A imoveis | Out-Null
+    $mudou = @(Rodar-Git status --porcelain)
     $antiga = @(); if (Test-Path $ArqLista) { $antiga = @(Get-Content $ArqLista -Encoding UTF8) }
     $entraram = @($lista | Where-Object { $_ -notin $antiga }); $sairam = @($antiga | Where-Object { $_ -notin $lista })
     $linhas = @()
     if ($mudou.Count -gt 0) {
         Dizer 'Enviando para o site...'
-        Git commit --quiet -m ("Atualiza imoveis pelo computador " + (Get-Date -Format 'dd/MM/yyyy HH:mm')) | Out-Null
-        Git push --quiet origin HEAD:conteudo | Out-Null
+        Rodar-Git commit --quiet -m ("Atualiza imoveis pelo computador " + (Get-Date -Format 'dd/MM/yyyy HH:mm')) | Out-Null
+        Rodar-Git push --quiet origin HEAD:conteudo | Out-Null
         $linhas += 'ENVIADO. As mudanças aparecem no site em cerca de 3 minutos.'
         Dizer 'Pronto! As mudancas aparecem no site em cerca de 3 minutos.'
     } else {

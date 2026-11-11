@@ -1,0 +1,30 @@
+name: Publicar site
+on:
+  push:
+    branches: [conteudo]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: publicar
+  cancel-in-progress: true
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install --quiet pillow
+      - name: Gerar o site a partir das pastas
+        run: python ferramentas/gerar.py _site
+      - name: Publicar (branch main, servido pelo GitHub Pages)
+        run: |
+          cd _site
+          git init -q -b main
+          git config user.name "Eleva Site"
+          git config user.email "site@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Site publicado a partir de ${GITHUB_SHA::7}"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" main

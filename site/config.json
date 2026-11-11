@@ -1,0 +1,14 @@
+{
+  "nome": "Eleva Evolução Imobiliária",
+  "cidade": "Maceió",
+  "uf": "AL",
+  "creci": "11517-J",
+  "whatsapp": "5582994010202",
+  "url": "https://elevaevolucao-imob.github.io/eleva-site/",
+  "equipe": [
+    {"nome": "Matheus Esdras", "cargo": "Corretor e sócio administrador", "instagram": "matheus.esdras", "foto": "matheus.jpg"},
+    {"nome": "Kelljon Barbosa", "cargo": "Corretor e sócio executivo", "instagram": "kelljonbarbosa", "foto": "kelljon.jpg"},
+    {"nome": "Bruno Montenegro", "cargo": "Corretor", "instagram": "brunomontenegro.imoveis", "foto": "bruno.jpg"},
+    {"nome": "Leonardo Santos", "cargo": "Corretor", "instagram": "_.leosantoss", "foto": "leonardo.jpg"}
+  ]
+}

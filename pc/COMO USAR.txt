@@ -1,0 +1,64 @@
+SITE DA ELEVA - COMO USAR ESTA PASTA
+https://elevaevolucao-imob.github.io/eleva-site/
+
+O site é montado a partir da pasta IMOVEIS. O que estiver nela aparece no site;
+o que sair dela sai do site. O computador confere a pasta sozinho a cada 5 minutos.
+
+
+PARA COLOCAR UM IMÓVEL NO SITE
+
+1. Abra IMOVEIS e entre na pasta do bairro (exemplo: Jatiúca).
+   Se o bairro ainda não existe, crie uma pasta com o nome dele. Ele aparece no site sozinho.
+2. Dentro do bairro, crie uma pasta com o nome do empreendimento (exemplo: Edifício Sol).
+   O nome da pasta é o nome que aparece no site.
+3. Coloque as fotos dentro dessa pasta (JPG ou PNG).
+   A foto de capa é a que se chamar "capa". Sem ela, a capa é a primeira foto pela ordem do nome.
+4. Crie uma nota chamada "descricao" (Bloco de Notas) com o texto do empreendimento.
+   Há um exemplo pronto em IMOVEIS > _MODELO (copie esta pasta).
+
+Pronto. Em até uns 8 minutos o imóvel está no ar.
+Com pressa? Dê dois cliques em PUBLICAR AGORA.
+
+
+PARA TIRAR UM IMÓVEL DO SITE (vendido, por exemplo)
+
+Arraste a pasta dele para IMOVEIS > _VENDIDOS (fora do site). Ele sai do site e você não perde nada.
+Se preferir, pode apagar a pasta.
+Toda pasta que começa com _ (sublinhado) fica fora do site.
+
+
+PARA TROCAR FOTOS, PREÇO OU TEXTO
+
+Mexa direto na pasta do empreendimento: troque as fotos ou edite a nota "descricao" e salve.
+
+
+O QUE ESCREVER NA NOTA "descricao"
+
+No começo, uma informação por linha, no formato  Nome: valor  (todas são opcionais):
+
+  Construtora: MRV
+  Preço: 350.000,00          (use o menor preço da tabela; sem esta linha aparece "Valores sob consulta")
+  Selo: Pré-lançamento       (etiqueta sobre a foto: Lançamento, Pronto para morar, Minha Casa Minha Vida...)
+  Endereço: Rua Exemplo, 100
+  Quartos: 2 e 3
+  Área: 55 a 78 m²
+  Vagas: 1
+  Entrega: Dezembro de 2027
+  Destaque: sim              (aparece primeiro dentro do bairro)
+
+Depois, pule uma linha e escreva a descrição livremente.
+
+
+COMO SABER SE DEU CERTO
+
+Abra o arquivo SITUACAO DO SITE.txt nesta pasta. Ele mostra a data do último envio,
+o que entrou, o que saiu e qualquer problema (por exemplo, pasta sem foto).
+
+
+OBSERVAÇÕES
+
+- Não renomeie nem mude de lugar a pasta SITE ELEVA nem a pasta IMOVEIS.
+- Fotos de iPhone em formato HEIC não entram: salve ou exporte como JPG.
+- PDF (book) não é publicado. Só as fotos e a nota de descrição vão para o site.
+- Suas fotos originais nunca são alteradas. O site usa cópias reduzidas.
+- O computador precisa estar ligado e com internet para publicar.

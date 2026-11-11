@@ -1,0 +1,16 @@
+Construtora: Nome da construtora
+Preço: 350.000,00
+Selo: Lançamento
+Endereço: Rua Exemplo, 100
+Quartos: 2 e 3
+Área: 55 a 78 m²
+Vagas: 1 ou 2
+Entrega: Dezembro de 2027
+
+Escreva aqui a descrição do empreendimento, do jeito que você escreveria para um cliente. A primeira frase aparece também no cartão da página inicial.
+
+Pode escrever mais de um parágrafo. Deixe uma linha em branco entre eles.
+
+- Linhas que começam com traço viram uma lista
+- Piscina
+- Academia

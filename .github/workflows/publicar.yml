@@ -26,7 +26,8 @@ jobs:
         with:
           python-version: "3.12"
       - name: Instalar bibliotecas
-        run: python -m pip install --quiet --only-binary=:all: -r ferramentas/requisitos.txt
+        run: |
+          python -m pip install --quiet --only-binary=:all: -r ferramentas/requisitos.txt
       - name: Buscar avaliacoes de 5 estrelas no Google
         continue-on-error: true
         env:

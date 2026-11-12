@@ -15,8 +15,11 @@ $ArqEstado = Join-Path $Base 'estado.txt'
 $ArqManifesto = Join-Path $Base 'manifesto.txt'
 $ArqLista = Join-Path $Base 'lista.txt'
 $Site = 'https://elevaevolucao-imob.github.io/eleva-site/'
-$ExtFoto = '.jpg', '.jpeg', '.png', '.bmp', '.jfif', '.webp'
+$ExtFoto = '.jpg', '.jpeg', '.png', '.bmp', '.jfif', '.webp', '.heic', '.heif', '.avif', '.tif', '.tiff'
 $ExtTexto = '.txt', '.md'
+$RemotoEsperado = 'https://github.com/elevaevolucao-imob/eleva-site.git'
+$VersaoFotos = 'v2'                        # mudar este valor reprocessa todas as fotos uma vez
+$MaxLado = 2400; $MaxBytes = 60MB; $MaxFotos = 40
 $Avisos = New-Object System.Collections.Generic.List[string]
 
 function Dizer($t) { if ($Manual) { Write-Host $t } }
@@ -35,56 +38,111 @@ function Rodar-Git {
 }
 
 function Ignorada($nome) { return ($nome.StartsWith('_') -or $nome.StartsWith('.')) }
+function E-Link($item) { return [bool]($item.Attributes -band [IO.FileAttributes]::ReparsePoint) }
 
 # Lista os arquivos de um empreendimento (inclui subpastas, menos as que comecam com _).
 function Arquivos-De($dir) {
     $r = @()
-    foreach ($f in (Get-ChildItem -LiteralPath $dir.FullName -File)) { $r += $f }
+    foreach ($f in (Get-ChildItem -LiteralPath $dir.FullName -File)) { if (-not (E-Link $f)) { $r += $f } }
     foreach ($d in (Get-ChildItem -LiteralPath $dir.FullName -Directory)) {
-        if (-not (Ignorada $d.Name)) { $r += Arquivos-De $d }
+        if (-not (Ignorada $d.Name) -and -not (E-Link $d)) { $r += Arquivos-De $d }
     }
     return $r
 }
 
-function Salvar-Jpeg($origem, $alvo) {
-    $img = [System.Drawing.Image]::FromFile($origem)
-    try {
-        if ($img.PropertyIdList -contains 0x0112) {
-            switch ([int]$img.GetPropertyItem(0x0112).Value[0]) {
-                3 { $img.RotateFlip('Rotate180FlipNone') }
-                6 { $img.RotateFlip('Rotate90FlipNone') }
-                8 { $img.RotateFlip('Rotate270FlipNone') }
-            }
-        }
-        $fator = [Math]::Min(1.0, 2000.0 / [Math]::Max($img.Width, $img.Height))
-        $w = [int][Math]::Round($img.Width * $fator); $h = [int][Math]::Round($img.Height * $fator)
-        $bmp = New-Object System.Drawing.Bitmap($w, $h)
-        try {
-            $g = [System.Drawing.Graphics]::FromImage($bmp)
-            $g.InterpolationMode = 'HighQualityBicubic'; $g.PixelOffsetMode = 'HighQuality'
-            $g.Clear([System.Drawing.Color]::White)
-            $g.DrawImage($img, 0, 0, $w, $h); $g.Dispose()
-            $codec = [System.Drawing.Imaging.ImageCodecInfo]::GetImageEncoders() | Where-Object { $_.MimeType -eq 'image/jpeg' }
-            $p = New-Object System.Drawing.Imaging.EncoderParameters(1)
-            $p.Param[0] = New-Object System.Drawing.Imaging.EncoderParameter([System.Drawing.Imaging.Encoder]::Quality, [long]88)
-            $bmp.Save($alvo, $codec, $p)
-        } finally { $bmp.Dispose() }
-    } finally { $img.Dispose() }
+# ---------- Fotos ----------
+# Toda foto que vai para o site passa por aqui. O original na pasta do usuario nunca e alterado.
+# Seguranca: o repositorio do site e publico, entao nenhuma foto sai com metadados (localizacao GPS,
+# modelo do celular, autor, data). JPEG pequeno e limpo sem recompressao; o resto e convertido para JPEG.
+Add-Type -AssemblyName PresentationCore, WindowsBase
+
+function Abrir-Decoder($fs, $opcao) {
+    return [Windows.Media.Imaging.BitmapDecoder]::Create($fs, [Windows.Media.Imaging.BitmapCreateOptions]::PreservePixelFormat, $opcao)
 }
 
-# Foto ja leve (ate 2200 px, ate 1,5 MB, sem rotacao pendente) vai como esta.
-function Foto-Leve($f) {
-    if ($f.Extension -notin '.jpg', '.jpeg') { return $false }
-    if ($f.Length -gt 1500000) { return $false }
+function Orientacao($frame) {
+    foreach ($q in '/app1/ifd/{ushort=274}', '/ifd/{ushort=274}') {
+        try { $v = $frame.Metadata.GetQuery($q); if ($v) { return [int]"$v" } } catch {}
+    }
+    return 1
+}
+
+# JPEG ja no tamanho certo e de pe: so tira os metadados (sem perder qualidade).
+function Precisa-Converter($f) {
+    if ($f.Extension.ToLower() -notin '.jpg', '.jpeg', '.jfif') { return $true }
+    if ($f.Length -gt 4MB) { return $true }
     $fs = [IO.File]::OpenRead($f.FullName)
     try {
-        $img = [System.Drawing.Image]::FromStream($fs, $false, $false)
-        try {
-            $rot = 1
-            if ($img.PropertyIdList -contains 0x0112) { $rot = [int]$img.GetPropertyItem(0x0112).Value[0] }
-            return (([Math]::Max($img.Width, $img.Height) -le 2200) -and ($rot -le 1))
-        } finally { $img.Dispose() }
+        $fr = (Abrir-Decoder $fs ([Windows.Media.Imaging.BitmapCacheOption]::None)).Frames[0]
+        return (([Math]::Max($fr.PixelWidth, $fr.PixelHeight) -gt $MaxLado) -or ((Orientacao $fr) -gt 1))
     } finally { $fs.Dispose() }
+}
+
+# Copia o JPEG sem os blocos de metadados (EXIF/GPS, XMP, IPTC, comentarios). Mantem perfil de cor (APP2) e Adobe (APP14).
+function Limpar-Jpeg($origem, $alvo) {
+    $b = [IO.File]::ReadAllBytes($origem)
+    if ($b.Length -lt 4 -or $b[0] -ne 0xFF -or $b[1] -ne 0xD8) { throw 'nao e um JPEG valido' }
+    $ms = New-Object IO.MemoryStream
+    $ms.WriteByte(0xFF); $ms.WriteByte(0xD8)
+    $i = 2
+    while ($true) {
+        if ($i + 4 -gt $b.Length -or $b[$i] -ne 0xFF) { throw 'JPEG corrompido' }
+        $m = $b[$i + 1]
+        if ($m -eq 0xFF) { $i++; continue }
+        if ($m -eq 0xDA -or $m -eq 0xD9) { $ms.Write($b, $i, $b.Length - $i); break }
+        if ($m -eq 0x01 -or ($m -ge 0xD0 -and $m -le 0xD7)) { $ms.Write($b, $i, 2); $i += 2; continue }
+        $len = [int]$b[$i + 2] * 256 + [int]$b[$i + 3]
+        if ($len -lt 2 -or ($i + 2 + $len) -gt $b.Length) { throw 'JPEG corrompido' }
+        $metadado = (($m -ge 0xE1 -and $m -le 0xEF -and $m -ne 0xE2 -and $m -ne 0xEE) -or $m -eq 0xFE)
+        if (-not $metadado) { $ms.Write($b, $i, 2 + $len) }
+        $i += 2 + $len
+    }
+    $tmp = "$alvo.tmp"
+    [IO.File]::WriteAllBytes($tmp, $ms.ToArray())
+    Move-Item -LiteralPath $tmp -Destination $alvo -Force
+}
+
+# Converte qualquer formato (PNG, WEBP, HEIC do iPhone, AVIF, TIFF, JPEG grande ou girado) para JPEG:
+# coloca de pe, reduz para no maximo 2400 px, transparencia vira fundo branco, sem metadados.
+function Converter-Foto($origem, $alvo) {
+    $fs = [IO.File]::OpenRead($origem)
+    try {
+        $fr = (Abrir-Decoder $fs ([Windows.Media.Imaging.BitmapCacheOption]::OnLoad)).Frames[0]
+        $o = Orientacao $fr
+        $src = [Windows.Media.Imaging.BitmapSource]$fr
+        $fator = [Math]::Min(1.0, $MaxLado / [Math]::Max($src.PixelWidth, $src.PixelHeight))
+        $tg = New-Object Windows.Media.TransformGroup
+        if ($fator -lt 1.0) { $tg.Children.Add((New-Object Windows.Media.ScaleTransform($fator, $fator))) }
+        switch ($o) {
+            3 { $tg.Children.Add((New-Object Windows.Media.RotateTransform(180))) }
+            6 { $tg.Children.Add((New-Object Windows.Media.RotateTransform(90))) }
+            8 { $tg.Children.Add((New-Object Windows.Media.RotateTransform(270))) }
+        }
+        if ($tg.Children.Count -gt 0) { $src = New-Object Windows.Media.Imaging.TransformedBitmap($src, $tg) }
+        if ($src.Format -ne [Windows.Media.PixelFormats]::Cmyk32) {
+            $w = $src.PixelWidth; $h = $src.PixelHeight
+            $dv = New-Object Windows.Media.DrawingVisual
+            $dc = $dv.RenderOpen()
+            $ret = New-Object Windows.Rect(0, 0, $w, $h)
+            $dc.DrawRectangle([Windows.Media.Brushes]::White, $null, $ret)
+            $dc.DrawImage($src, $ret)
+            $dc.Close()
+            $rtb = New-Object Windows.Media.Imaging.RenderTargetBitmap($w, $h, 96, 96, [Windows.Media.PixelFormats]::Pbgra32)
+            $rtb.Render($dv)
+            $src = New-Object Windows.Media.Imaging.FormatConvertedBitmap($rtb, [Windows.Media.PixelFormats]::Bgr24, $null, 0)
+        }
+        $enc = New-Object Windows.Media.Imaging.JpegBitmapEncoder
+        $enc.QualityLevel = 90
+        $enc.Frames.Add([Windows.Media.Imaging.BitmapFrame]::Create($src))
+        $tmp = "$alvo.tmp"
+        $out = [IO.File]::Create($tmp)
+        try { $enc.Save($out) } finally { $out.Dispose() }
+        Move-Item -LiteralPath $tmp -Destination $alvo -Force
+    } finally { $fs.Dispose() }
+}
+
+function Preparar-Foto($f, $alvo) {
+    if (Precisa-Converter $f) { Converter-Foto $f.FullName $alvo } else { Limpar-Jpeg $f.FullName $alvo }
 }
 
 $trava = New-Object System.Threading.Mutex($false, 'ElevaSitePublicar')
@@ -102,15 +160,28 @@ try {
         if (Ignorada $b.Name) { continue }
         foreach ($e in (Get-ChildItem -LiteralPath $b.FullName -Directory | Sort-Object Name)) {
             if (Ignorada $e.Name) { continue }
-            $arqs = @(Arquivos-De $e); $nFotos = 0
+            $arqs = @(Arquivos-De $e); $nFotos = 0; $temDescricao = $false; $vistos = @{}
             foreach ($f in $arqs) {
                 $ext = $f.Extension.ToLower()
-                if ($ext -in '.heic', '.heif') { $Avisos.Add("$($b.Name) / $($e.Name): a foto $($f.Name) está em HEIC (iPhone) e não entra no site. Salve como JPG.") }
-                if (($ext -notin $ExtFoto) -and ($ext -notin $ExtTexto)) { continue }
-                if ($ext -in $ExtFoto) { $nFotos++ }
+                if ($ext -in $ExtTexto) {
+                    # So a descricao vai para o site. Qualquer outro texto (anotacoes, senhas, contatos) fica so no computador.
+                    if ($temDescricao -or -not $f.BaseName.ToLower().StartsWith('descri') -or $f.DirectoryName -ne $e.FullName) {
+                        $Avisos.Add("$($b.Name) / $($e.Name): o arquivo $($f.Name) não vai para o site (só o descricao.txt vai)."); continue
+                    }
+                    $temDescricao = $true
+                } elseif ($ext -in $ExtFoto) {
+                    if ($f.Length -gt $MaxBytes) { $Avisos.Add("$($b.Name) / $($e.Name): a foto $($f.Name) tem mais de 60 MB e ficou de fora."); continue }
+                    if ($nFotos -ge $MaxFotos) { $Avisos.Add("$($b.Name) / $($e.Name): só as primeiras $MaxFotos fotos entram no site."); continue }
+                    $nFotos++
+                } else {
+                    if ($ext -notin '.ini', '.db', '.lnk', '.tmp') { $Avisos.Add("$($b.Name) / $($e.Name): o arquivo $($f.Name) não vai para o site (só fotos e o descricao.txt).") }
+                    continue
+                }
                 $rel = $f.FullName.Substring($e.FullName.Length).TrimStart('\')
-                if ($ext -in '.png', '.bmp', '.jfif', '.jpeg') { $rel = [IO.Path]::ChangeExtension($rel, '.jpg') }
-                $marca = "$($f.Length)|$($f.LastWriteTimeUtc.Ticks)"
+                if ($ext -in $ExtFoto) { $rel = [IO.Path]::ChangeExtension($rel, '.jpg') }
+                if ($vistos.ContainsKey($rel.ToLower())) { $Avisos.Add("$($b.Name) / $($e.Name): há duas fotos com o nome $([IO.Path]::GetFileNameWithoutExtension($rel)); só uma entrou. Renomeie uma delas."); continue }
+                $vistos[$rel.ToLower()] = $true
+                $marca = "$VersaoFotos|$($f.Length)|$($f.LastWriteTimeUtc.Ticks)"
                 $planos += [pscustomobject]@{ Origem = $f; Alvo = (Join-Path (Join-Path $b.Name.Trim() $e.Name.Trim()) $rel); Marca = $marca; Ext = $ext }
                 [void]$assinatura.AppendLine("$($b.Name)\$($e.Name)\$rel|$marca")
                 foreach ($t in $f.LastWriteTime, $f.CreationTime) { if ($t -gt $maisNovo) { $maisNovo = $t } }
@@ -134,11 +205,12 @@ try {
 
     # 2. Deixa a copia de trabalho igual ao que esta no GitHub
     Dizer 'Conferindo com o site...'
+    $remoto = (Rodar-Git remote get-url origin | Select-Object -First 1).Trim()
+    if ($remoto -ne $RemotoEsperado) { throw "Endereco do repositorio inesperado ($remoto). Envio bloqueado por seguranca." }
     Rodar-Git fetch --quiet origin conteudo | Out-Null
     Rodar-Git reset --quiet --hard origin/conteudo | Out-Null
 
     # 3. Espelha a pasta do usuario (fotos grandes sao reduzidas na copia; os originais ficam intactos)
-    Add-Type -AssemblyName System.Drawing
     $manifesto = @{}
     if (Test-Path $ArqManifesto) { foreach ($l in (Get-Content $ArqManifesto -Encoding UTF8)) { $p = $l.Split("`t"); if ($p.Count -eq 2) { $manifesto[$p[0]] = $p[1] } } }
     $novoManifesto = @{}; $querido = @{}
@@ -149,10 +221,11 @@ try {
         if ((Test-Path -LiteralPath $alvo) -and ($manifesto[$pl.Alvo] -eq $pl.Marca)) { continue }
         New-Item -ItemType Directory -Force -Path (Split-Path $alvo) | Out-Null
         try {
-            if (($pl.Ext -in $ExtTexto) -or ($pl.Ext -eq '.webp') -or (Foto-Leve $pl.Origem)) { Copy-Item -LiteralPath $pl.Origem.FullName -Destination $alvo -Force }
-            else { Dizer "  Preparando foto: $($pl.Alvo)"; Salvar-Jpeg $pl.Origem.FullName $alvo }
+            if ($pl.Ext -in $ExtTexto) { Copy-Item -LiteralPath $pl.Origem.FullName -Destination $alvo -Force }
+            else { Dizer "  Preparando foto: $($pl.Alvo)"; Preparar-Foto $pl.Origem $alvo }
         } catch {
-            $Avisos.Add("$($pl.Alvo): não foi possível ler este arquivo, ficou fora do site.")
+            $Avisos.Add("$($pl.Alvo): não foi possível ler este arquivo, ficou fora do site. Se for foto de iPhone (HEIC), instale a 'Extensão de Imagem HEIF' da Microsoft Store ou salve como JPG.")
+            if (Test-Path -LiteralPath $alvo) { Remove-Item -LiteralPath $alvo -Force }
             $novoManifesto.Remove($pl.Alvo); $querido.Remove($alvo.ToLower())
         }
     }

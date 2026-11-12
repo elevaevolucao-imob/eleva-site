@@ -1,2 +1,14 @@
 _site/
 __pycache__/
+
+# Nunca enviar documentos internos (defesa extra; a sincronizacao ja so envia fotos e descricao.txt)
+*.pdf
+*.xls
+*.xlsx
+*.doc
+*.docx
+*.zip
+*.rar
+.env
+*.key
+*.pem

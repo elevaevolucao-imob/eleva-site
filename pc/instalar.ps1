@@ -1,4 +1,4 @@
-# Instalacao (uma vez): baixa o projeto, cria a pasta SITE ELEVA na Area de Trabalho e agenda a publicacao automatica.
+﻿# Instalacao (uma vez): baixa o projeto, cria a pasta SITE ELEVA na Area de Trabalho e agenda a publicacao automatica.
 $ErrorActionPreference = 'Stop'
 $Base = Join-Path $env:LOCALAPPDATA 'ElevaSite'
 $Repo = Join-Path $Base 'repo'
@@ -37,4 +37,9 @@ $cfg = '{"pasta": ' + ($Pasta | ConvertTo-Json) + '}'
 $vbs = Join-Path $Repo 'pc\oculto.vbs'
 $ErrorActionPreference = 'Continue'
 schtasks /Create /F /TN "Eleva - Publicar site" /SC MINUTE /MO 5 /TR "wscript.exe \`"$vbs\`"" 2>&1 | ForEach-Object { "$_" }
+# Notebook: publica tambem na bateria, recupera rodadas perdidas (computador dormindo) e nunca fica travado mais de 30 min.
+try {
+    $ajuste = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -ExecutionTimeLimit (New-TimeSpan -Minutes 30) -MultipleInstances IgnoreNew
+    Set-ScheduledTask -TaskName "Eleva - Publicar site" -Settings $ajuste | Out-Null
+} catch { "Aviso: nao foi possivel ajustar a tarefa agendada ($($_.Exception.Message))." }
 "Instalado. Pasta: $Pasta"

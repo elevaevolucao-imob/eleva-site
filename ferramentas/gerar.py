@@ -5,10 +5,17 @@ Cada pasta de empreendimento tem um arquivo de texto (descricao.txt) e as fotos.
 Uso:  python3 ferramentas/gerar.py [pasta_de_saida]     (padrao: _site)
 Nunca falha por causa de conteudo: pasta com problema e avisada e pulada.
 """
-import html, json, os, re, shutil, sys, unicodedata
+import html, io, json, os, re, shutil, sys, unicodedata
 from datetime import date
 from pathlib import Path
-from PIL import Image, ImageOps
+from PIL import Image, ImageCms, ImageOps
+
+try:  # fotos do iPhone (HEIC/HEIF) e AVIF
+    from pillow_heif import register_heif_opener
+    register_heif_opener()
+except Exception:
+    pass
+Image.MAX_IMAGE_PIXELS = 160_000_000      # protege contra arquivo de imagem malicioso ("bomba de descompressao")
 
 RAIZ = Path(__file__).resolve().parent.parent
 FONTE = RAIZ / "imoveis"
@@ -17,7 +24,12 @@ SAIDA = Path(sys.argv[1]) if len(sys.argv) > 1 else RAIZ / "_site"
 CFG = json.loads((SITE / "config.json").read_text(encoding="utf-8"))
 URL = CFG["url"].rstrip("/") + "/"
 WA = CFG["whatsapp"]
-EXT_FOTO = {".jpg", ".jpeg", ".png", ".webp", ".jfif", ".bmp"}
+EXT_FOTO = {".jpg", ".jpeg", ".png", ".webp", ".jfif", ".bmp", ".heic", ".heif", ".avif", ".tif", ".tiff"}
+MAX_FOTOS = 40                  # por empreendimento
+MAX_BYTES = 60 * 1024 * 1024    # arquivo maior que isso e ignorado
+SRGB = ImageCms.ImageCmsProfile(ImageCms.createProfile("sRGB"))
+CMYK_PADRAO = next((c for c in ("/usr/share/color/icc/ghostscript/default_cmyk.icc",
+                                "/usr/share/color/icc/ghostscript/ps_cmyk.icc") if os.path.isfile(c)), None)
 AVISOS = []
 
 # Preposicao certa para os bairros de Maceio ("na Jatiuca", "no Farol"...).
@@ -178,6 +190,36 @@ def carregar():
     return imoveis
 
 
+def abrir_foto(p):
+    """Abre qualquer foto colocada na pasta e devolve em RGB/sRGB, de pe e sem metadados.
+    Trata CMYK de book/grafica (com o perfil de cor embutido), PNG transparente, 16 bits, HEIC e perfis de cor de camera."""
+    img = Image.open(p)
+    if img.format == "JPEG":
+        img.draft(img.mode, (3600, 3600))   # abre fotos enormes ja reduzidas: rapido e com pouca memoria
+    img = ImageOps.exif_transpose(img)
+    icc = img.info.get("icc_profile")
+    if img.mode == "CMYK":
+        try:
+            origem = ImageCms.ImageCmsProfile(io.BytesIO(icc)) if icc else (ImageCms.getOpenProfile(CMYK_PADRAO) if CMYK_PADRAO else None)
+            return ImageCms.profileToProfile(img, origem, SRGB, outputMode="RGB") if origem else img.convert("RGB")
+        except Exception:
+            return img.convert("RGB")
+    if img.mode in ("RGBA", "LA", "P", "PA") or "transparency" in img.info:
+        img = img.convert("RGBA")
+        fundo = Image.new("RGB", img.size, "#ffffff")
+        fundo.paste(img, mask=img.split()[-1])
+        return fundo
+    if img.mode in ("I;16", "I;16B", "I;16L", "I"):
+        img = img.point(lambda x: x * (1 / 256)).convert("L")
+    img = img.convert("RGB")
+    if icc:
+        try:
+            img = ImageCms.profileToProfile(img, ImageCms.ImageCmsProfile(io.BytesIO(icc)), SRGB, outputMode="RGB")
+        except Exception:
+            pass
+    return img
+
+
 def gravar_fotos(im):
     """Grava cada foto em dois tamanhos: grande (1800px) e pequena (800px)."""
     dst = SAIDA / "imoveis" / im["slug"] / "f"
@@ -185,14 +227,13 @@ def gravar_fotos(im):
     saida = []
     for p in im["fotos"]:
         try:
-            img = ImageOps.exif_transpose(Image.open(p))
-            if img.mode in ("RGBA", "LA", "P"):
-                img = img.convert("RGBA")
-                fundo = Image.new("RGB", img.size, "#ffffff")
-                fundo.paste(img, mask=img.split()[-1])
-                img = fundo
-            else:
-                img = img.convert("RGB")
+            if p.stat().st_size > MAX_BYTES:
+                AVISOS.append(f"{im['bairro']} / {im['nome']}: foto {p.name} tem mais de 60 MB e ficou de fora.")
+                continue
+            if len(saida) >= MAX_FOTOS:
+                AVISOS.append(f"{im['bairro']} / {im['nome']}: so as primeiras {MAX_FOTOS} fotos entram no site.")
+                break
+            img = abrir_foto(p)
             if min(img.size) < 200:
                 continue
             n = f"{len(saida) + 1:02d}"
@@ -220,6 +261,11 @@ def fone():
     return f"({WA[2:4]}) {WA[4:9]}-{WA[9:]}"
 
 
+# Politica de seguranca do navegador: so carrega codigo, estilo e fonte do proprio site.
+CSP = ("default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; "
+       "connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests")
+
+
 def pagina(r, titulo, desc, corpo, caminho="", og=None, extra_head=""):
     """r = prefixo relativo ate a raiz ('' ou '../../')."""
     ogimg = URL + (og or "img/mcz.jpg")
@@ -227,6 +273,8 @@ def pagina(r, titulo, desc, corpo, caminho="", og=None, extra_head=""):
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="{CSP}">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{e(titulo)}</title>
 <meta name="description" content="{e(desc)}">
@@ -241,9 +289,7 @@ def pagina(r, titulo, desc, corpo, caminho="", og=None, extra_head=""):
 <meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#2B3578">
 <link rel="icon" href="{r}img/favicon.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..700&display=swap" rel="stylesheet">
+<link rel="preload" href="{r}fontes/archivo.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="{r}estilo.css?v={VERSAO}">
 {extra_head}</head>
 <body>
@@ -496,7 +542,7 @@ def pag_inicio(imoveis, bairros):
                                  "addressRegion": CFG["uf"], "addressCountry": "BR"}}, ensure_ascii=False)
     return pagina("", f"{CFG['nome']} | Imóveis em Maceió",
                   f"Lançamentos e imóveis prontos em Maceió: {lista_b}. Fotos, valores a partir de e atendimento pelo WhatsApp.",
-                  corpo, "", extra_head=f'<script type="application/ld+json">{ld}</script>\n')
+                  corpo, "", extra_head='<script type="application/ld+json">' + ld.replace("<", "\\u003c") + '</script>\n')
 
 
 def chamada(t, s, msg):
@@ -621,6 +667,8 @@ def main():
         shutil.copy2(SITE / f, SAIDA / f)
     shutil.copytree(SITE / "img", SAIDA / "img")
     shutil.copytree(SITE / "equipe", SAIDA / "equipe")
+    if (SITE / "fontes").is_dir():
+        shutil.copytree(SITE / "fontes", SAIDA / "fontes")
     (SAIDA / ".nojekyll").write_text("")
     (SAIDA / "index.html").write_text(pag_inicio(imoveis, bairros), encoding="utf-8")
     urls = [""]

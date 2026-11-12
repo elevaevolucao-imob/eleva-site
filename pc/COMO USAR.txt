@@ -1,4 +1,4 @@
-SITE DA ELEVA - COMO USAR ESTA PASTA
+﻿SITE DA ELEVA - COMO USAR ESTA PASTA
 https://elevaevolucao-imob.github.io/eleva-site/
 
 O site é montado a partir da pasta IMOVEIS. O que estiver nela aparece no site;
@@ -11,7 +11,8 @@ PARA COLOCAR UM IMÓVEL NO SITE
    Se o bairro ainda não existe, crie uma pasta com o nome dele. Ele aparece no site sozinho.
 2. Dentro do bairro, crie uma pasta com o nome do empreendimento (exemplo: Edifício Sol).
    O nome da pasta é o nome que aparece no site.
-3. Coloque as fotos dentro dessa pasta (JPG ou PNG).
+3. Coloque as fotos dentro dessa pasta. Vale qualquer formato comum: JPG, PNG, WEBP, HEIC (iPhone), AVIF ou TIFF.
+   Pode ser foto grande, deitada ou do celular: o computador ajusta tamanho, posição e cores sozinho.
    A foto de capa é a que se chamar "capa". Sem ela, a capa é a primeira foto pela ordem do nome.
 4. Crie uma nota chamada "descricao" (Bloco de Notas) com o texto do empreendimento.
    Há um exemplo pronto em IMOVEIS > _MODELO (copie esta pasta).
@@ -58,7 +59,12 @@ o que entrou, o que saiu e qualquer problema (por exemplo, pasta sem foto).
 OBSERVAÇÕES
 
 - Não renomeie nem mude de lugar a pasta SITE ELEVA nem a pasta IMOVEIS.
-- Fotos de iPhone em formato HEIC não entram: salve ou exporte como JPG.
-- PDF (book) não é publicado. Só as fotos e a nota de descrição vão para o site.
+- Fotos de iPhone (HEIC) entram normalmente. Se alguma aparecer no aviso como "não foi possível ler",
+  instale a "Extensão de Imagem HEIF" da Microsoft Store (grátis) ou salve a foto como JPG.
+- Só vão para o site as fotos e a nota "descricao". PDF, planilha, tabela de preços ou qualquer outra
+  anotação colocada na pasta NUNCA é publicada (fica só no computador).
+- Antes de ir para a internet, cada foto perde as informações escondidas que celular e drone gravam
+  (localização GPS, modelo do aparelho, data). A foto em si não muda.
+- Até 40 fotos por empreendimento e até 60 MB por foto.
 - Suas fotos originais nunca são alteradas. O site usa cópias reduzidas.
 - O computador precisa estar ligado e com internet para publicar.

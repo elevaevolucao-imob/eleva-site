@@ -1,6 +1,7 @@
 /* Eleva Evolução Imobiliária
    Uma família só (Archivo): larga nos títulos, como o logotipo; normal no texto.
    Azul e areia da marca. O dourado aparece só em fios e detalhes. */
+@font-face{font-family:"Archivo";src:url("fontes/archivo.woff2") format("woff2");font-weight:300 700;font-stretch:62% 125%;font-style:normal;font-display:swap}
 :root{
   --azul:#2B3578;
   --azul-fundo:#1E2558;

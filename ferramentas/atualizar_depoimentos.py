@@ -1,7 +1,7 @@
 """Busca as avaliacoes do Google (API oficial Places) e guarda so as de 5 estrelas em site/depoimentos.json.
 Roda sozinho todo dia pelo GitHub (.github/workflows/publicar.yml). Sem a chave GOOGLE_PLACES_KEY, nao faz nada
 e o site continua com os depoimentos que ja estao no arquivo."""
-import json, os, sys, urllib.request, urllib.error
+import json, os, re, sys, urllib.request, urllib.error
 from pathlib import Path
 
 ARQ = Path(__file__).resolve().parent.parent / "site" / "depoimentos.json"
@@ -36,10 +36,13 @@ def main():
             if not pid:
                 print("Empresa nao encontrada no Google; depoimentos mantidos.")
                 return 0
+        if not re.fullmatch(r"[A-Za-z0-9_-]{10,200}", pid):     # nunca monta endereco com valor estranho
+            print("Identificador do Google invalido; depoimentos mantidos.")
+            return 0
         r = chamar(f"https://places.googleapis.com/v1/places/{pid}?languageCode=pt-BR", None,
                    "rating,userRatingCount,reviews")
     except (urllib.error.URLError, ValueError) as ex:
-        print(f"Google indisponivel ({ex}); depoimentos mantidos.")
+        print(f"Google indisponivel ({type(ex).__name__}); depoimentos mantidos.")   # sem detalhes: nunca expoe a chave no log
         return 0
     atual = json.loads(ARQ.read_text(encoding="utf-8")) if ARQ.is_file() else {"itens": []}
     itens = atual.get("itens", [])
@@ -51,6 +54,7 @@ def main():
         k = " ".join(txt.split())[:80]
         if k in chaves:
             continue
+        txt = txt[:900]                                      # limite de tamanho (o site escapa o texto ao exibir)
         nome = nome_curto((rv.get("authorAttribution") or {}).get("displayName"))
         if nome:
             itens.insert(0, {"nome": nome, "texto": txt, "nota": 5}); chaves.add(k)

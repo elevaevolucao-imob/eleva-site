@@ -17,6 +17,12 @@ PARA COLOCAR UM IMÓVEL NO SITE
 4. Crie uma nota chamada "descricao" (Bloco de Notas) com o texto do empreendimento.
    Há um exemplo pronto em IMOVEIS > _MODELO (copie esta pasta).
 
+FOTO DO CARROSSEL (a faixa grande do topo da página inicial)
+   Só entram no carrossel os imóveis acima de R$ 400 mil que tenham uma foto chamada "carrossel".
+   Ela deve ser bem larga (deitada, de preferência 2400 px de largura ou mais), com o prédio ou o
+   lazer no meio da imagem. Foto pequena ou em pé não entra, para a faixa nunca ficar borrada.
+   A foto "carrossel" não aparece na galeria do imóvel.
+
 Pronto. Em até uns 8 minutos o imóvel está no ar.
 Com pressa? Dê dois cliques em PUBLICAR AGORA.
 

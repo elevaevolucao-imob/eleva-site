@@ -65,6 +65,7 @@ ul,ol{margin:0;padding:0;list-style:none}
 .slides{position:relative;aspect-ratio:1440/620;max-height:74vh;min-height:300px;width:100%;overflow:hidden;background:var(--azul-fundo)}
 .slide{position:absolute;inset:0;opacity:0;visibility:hidden;transition:opacity .7s ease,visibility 0s .7s;color:#fff;text-decoration:none}
 .slide.ativo{opacity:1;visibility:visible;transition:opacity .7s ease}
+.slide picture{display:block;width:100%;height:100%}
 .slide img{width:100%;height:100%;object-fit:cover}
 .slide::after{content:"";position:absolute;inset:auto 0 0 0;height:45%;background:linear-gradient(transparent,rgba(20,24,56,.72))}
 .slide-nome{position:absolute;z-index:1;right:clamp(64px,9vw,150px);bottom:clamp(20px,5vw,56px);text-align:right;font-size:1rem;display:flex;flex-direction:column;gap:2px}

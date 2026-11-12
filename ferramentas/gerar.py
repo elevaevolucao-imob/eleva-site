@@ -137,6 +137,9 @@ def ler_imovel(pasta, bairro):
             break
     fotos = sorted([p for p in pasta.rglob("*") if p.is_file() and p.suffix.lower() in EXT_FOTO
                     and not any(x.startswith(("_", ".")) for x in p.relative_to(pasta).parts)], key=ordem_natural)
+    # "carrossel.jpg": foto larga feita para a faixa do topo da pagina inicial (nao entra na galeria)
+    banner = next((p for p in fotos if p.stem.lower().startswith("carrossel")), None)
+    fotos = [p for p in fotos if p is not banner]
     fotos.sort(key=lambda p: not p.stem.lower().startswith("capa"))
     if not fotos:
         AVISOS.append(f"{bairro} / {pasta.name}: sem fotos, ficou fora do site.")
@@ -154,7 +157,7 @@ def ler_imovel(pasta, bairro):
     resumo = re.sub(r"^[-•*]\s*", "", resumo)
     if len(resumo) > 150:
         resumo = resumo[:147].rsplit(" ", 1)[0].rstrip(",.;") + "…"
-    return {"nome": nome, "bairro": bairro, "pasta": pasta, "fotos": fotos, "campos": campos, "extras": extras,
+    return {"nome": nome, "bairro": bairro, "pasta": pasta, "fotos": fotos, "banner_src": banner, "campos": campos, "extras": extras,
             "paragrafos": paragrafos, "preco": preco, "resumo": resumo, "selo": campos.get("selo"),
             "destaque": sem_acento(campos.get("destaque", "")) in ("sim", "s", "x", "1", "true"),
             "mtime": max(p.stat().st_mtime for p in fotos)}
@@ -245,7 +248,42 @@ def gravar_fotos(im):
         except Exception as ex:
             AVISOS.append(f"{im['bairro']} / {im['nome']}: foto {p.name} ignorada ({ex}).")
     im["img"] = saida
+    im["banner"] = None
+    if saida and im.get("banner_src"):
+        try:
+            gravar_banner(im, dst)
+        except Exception as ex:
+            AVISOS.append(f"{im['bairro']} / {im['nome']}: foto do carrossel ignorada ({ex}).")
     return bool(saida)
+
+
+PROP_CARROSSEL = 1440 / 620      # mesma proporcao da faixa do topo (estilo.css .slides)
+
+
+def recorte(img, prop, ay=0.5):
+    w, h = img.size
+    if w / h > prop:
+        nw = round(h * prop); x = (w - nw) // 2
+        return img.crop((x, 0, x + nw, h))
+    nh = round(w / prop); y = round((h - nh) * ay)
+    return img.crop((0, y, w, y + nh))
+
+
+def gravar_banner(im, dst):
+    """Faixa do carrossel em 3 versoes: tela grande (2400px), media (1280px) e celular (4:3)."""
+    img = abrir_foto(im["banner_src"])
+    if img.width < 1600:
+        AVISOS.append(f"{im['bairro']} / {im['nome']}: a foto do carrossel tem só {img.width} px de largura "
+                      f"(o ideal é 2400). Ela não entra no carrossel para não ficar borrada.")
+        return
+    larga = recorte(img, PROP_CARROSSEL)
+    g = larga.copy(); g.thumbnail((2400, 2400), Image.LANCZOS)
+    g.save(dst / "carrossel.jpg", "JPEG", quality=84, optimize=True, progressive=True)
+    m = larga.copy(); m.thumbnail((1280, 1280), Image.LANCZOS)
+    m.save(dst / "carrossel-m.jpg", "JPEG", quality=82, optimize=True, progressive=True)
+    c = recorte(img, 4 / 3); c.thumbnail((1100, 1100), Image.LANCZOS)
+    c.save(dst / "carrossel-c.jpg", "JPEG", quality=82, optimize=True, progressive=True)
+    im["banner"] = {"w": g.width, "h": g.height, "mw": m.width}
 
 
 def prep(b):
@@ -380,20 +418,30 @@ def google_atual():
 def pag_inicio(imoveis, bairros):
     n = len(imoveis)
     g, deps_lista = google_atual()
-    # Capa: so empreendimentos acima do valor minimo (config: carrossel_minimo), com foto deitada.
+    # Carrossel: so empreendimentos acima do valor minimo (config: carrossel_minimo) que tem a foto larga
+    # "carrossel.jpg" na pasta. Sem ela o empreendimento fica fora da faixa, para nunca aparecer foto esticada ou borrada.
     minimo = float(CFG.get("carrossel_minimo", 0))
-    cand = [i for i in imoveis if i["img"][0]["w"] >= i["img"][0]["h"] * 1.2 and (i["preco"] or 0) > minimo]
+    cand = [i for i in imoveis if i.get("banner") and (i["preco"] or 0) > minimo]
     cand.sort(key=lambda i: (not i["destaque"], -(i["preco"] or 0)))
     vistos, slides_im = set(), []
     for i in cand:                      # um por bairro primeiro, para variar
         if i["bslug"] not in vistos:
             vistos.add(i["bslug"]); slides_im.append(i)
     slides_im = (slides_im + [i for i in cand if i not in slides_im])[:int(CFG.get("carrossel_maximo", 8))]
-    if not slides_im:                   # nenhum acima do minimo: usa os melhores disponiveis
-        slides_im = sorted(imoveis, key=lambda i: -(i["preco"] or 0))[:5]
+    if not slides_im:                   # ninguem com foto larga: usa os que tem banner, sem filtro de valor
+        slides_im = sorted([i for i in imoveis if i.get("banner")], key=lambda i: -(i["preco"] or 0))[:5]
+
+    def foto_slide(i, k):
+        b, base = i.get("banner"), f'imoveis/{i["slug"]}/f/'
+        carga = ' fetchpriority="high"' if k == 0 else ' loading="lazy"'
+        if not b:
+            return f'<img src="imoveis/{i["slug"]}/{i["img"][0]["g"]}" alt="" width="{i["img"][0]["w"]}" height="{i["img"][0]["h"]}"{carga}>'
+        return (f'<picture><source media="(max-width: 860px)" srcset="{base}carrossel-c.jpg">'
+                f'<img src="{base}carrossel.jpg" srcset="{base}carrossel-m.jpg {b["mw"]}w, {base}carrossel.jpg {b["w"]}w" '
+                f'sizes="100vw" alt="" width="{b["w"]}" height="{b["h"]}"{carga}></picture>')
     slides = "".join(
         f'<a class="slide{" ativo" if k == 0 else ""}" href="imoveis/{i["slug"]}/" aria-label="{e(i["nome"])}, {e(i["bairro"])}">'
-        f'<img src="imoveis/{i["slug"]}/{i["img"][0]["g"]}" alt="" width="{i["img"][0]["w"]}" height="{i["img"][0]["h"]}"{" fetchpriority=high" if k == 0 else " loading=lazy"}>'
+        f'{foto_slide(i, k)}'
         f'<span class="slide-nome"><strong>{e(i["nome"])}</strong>{e(i["bairro"])}</span></a>' for k, i in enumerate(slides_im))
     pontos = "".join(f'<button type="button" aria-label="Mostrar {e(i["nome"])}"{" aria-current=true" if k == 0 else ""}></button>'
                      for k, i in enumerate(slides_im))
